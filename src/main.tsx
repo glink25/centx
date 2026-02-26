@@ -8,6 +8,7 @@ import "./index.css";
 import Login from "./components/login";
 import { initIntl, LocaleProvider } from "./locale/index";
 import { usePreferenceStore } from "./store/preference";
+import { registerDeepLink } from "./utils/deep-link";
 import { register as registerLaunchQueue } from "./utils/launch-queue";
 import { lazyWithReload } from "./utils/lazy";
 
@@ -28,3 +29,4 @@ initIntl(lang).then(() => {
 });
 
 registerLaunchQueue();
+registerDeepLink();

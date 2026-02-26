@@ -9,6 +9,9 @@ import { createHtmlPlugin } from "vite-plugin-html";
 import { VitePWA } from "vite-plugin-pwa";
 import svgr from "vite-plugin-svgr";
 
+const isTauri = process.env.TAURI_VITE === "1";
+const tauriDevHost = process.env.TAURI_DEV_HOST;
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd());
@@ -34,42 +37,63 @@ export default defineConfig(({ mode }) => {
         react(),
         svgr(),
         tailwindcss(),
-        VitePWA({
-            strategies: "injectManifest",
-            srcDir: "src",
-            filename: "sw.ts",
-            registerType: "autoUpdate",
-            injectRegister: "auto",
-            includeAssets: ["favicon.ico", "apple-touch-icon.png"],
-            manifest: {
-                name: "Cent - 日计",
-                short_name: "Cent",
-                description: "Accounting your life - 记录每一天",
-                theme_color: "#ffffff",
-                icons: [
-                    { src: "icon.png", sizes: "192x192", type: "image/png" },
-                    { src: "icon.png", sizes: "512x512", type: "image/png" },
-                ],
-                protocol_handlers: [
-                    {
-                        protocol: "cent-accounting",
-                        url: "/add-bills?text=%s",
-                        client_mode: "focus-existing", // 优先聚焦现有窗口
-                    } as any,
-                ],
-                launch_handler: {
-                    client_mode: ["navigate-existing", "auto"], // 优先在现有窗口导航
-                },
-                // 注意：标准 URL 链接唤起通过应用层面的 URL 参数处理实现
-                // 见 src/hooks/use-url-handler.tsx
-            },
-        }),
+        // Tauri 桌面端不需要 PWA
+        ...(isTauri
+            ? []
+            : [
+                  VitePWA({
+                      strategies: "injectManifest",
+                      srcDir: "src",
+                      filename: "sw.ts",
+                      registerType: "autoUpdate",
+                      injectRegister: "auto",
+                      includeAssets: ["favicon.ico", "apple-touch-icon.png"],
+                      manifest: {
+                          name: "Cent - 日计",
+                          short_name: "Cent",
+                          description: "Accounting your life - 记录每一天",
+                          theme_color: "#ffffff",
+                          icons: [
+                              {
+                                  src: "icon.png",
+                                  sizes: "192x192",
+                                  type: "image/png",
+                              },
+                              {
+                                  src: "icon.png",
+                                  sizes: "512x512",
+                                  type: "image/png",
+                              },
+                          ],
+                          protocol_handlers: [
+                              {
+                                  protocol: "cent-accounting",
+                                  url: "/add-bills?text=%s",
+                                  client_mode: "focus-existing",
+                              } as any,
+                          ],
+                          launch_handler: {
+                              client_mode: ["navigate-existing", "auto"],
+                          },
+                      },
+                  }),
+              ]),
     ];
 
     if (shouldAnalyze) {
-        // 只有在环境变量 ANALYZE=true 时才添加分析插件
         plugins.push(analyzer());
     }
+
+    const baseServer = {
+        proxy: {
+            "/google-api": {
+                target: "https://generativelanguage.googleapis.com",
+                changeOrigin: true,
+                rewrite: (path: string) => path.replace(/^\/google-api/, ""),
+            },
+        },
+    };
+
     return {
         plugins,
         resolve: {
@@ -80,17 +104,27 @@ export default defineConfig(({ mode }) => {
         worker: {
             format: "es",
         },
-        server: {
-            proxy: {
-                // 这里的 '/api' 是你在代码中调用的路径前缀
-                "/google-api": {
-                    target: "https://generativelanguage.googleapis.com", // 目标接口域名
-                    changeOrigin: true, // 必须设置为 true，以便绕过主机检查
-                    rewrite: (path) => path.replace(/^\/google-api/, ""), // 去掉路径中的前缀
-                    // 如果你的网络环境需要科学上网，且使用了本地代理软件，可能需要配置此项（可选）
-                    // secure: false,
-                },
-            },
-        },
+        // Tauri 开发/构建时使用固定端口与 HMR，并保留原有 proxy
+        ...(isTauri
+            ? {
+                  clearScreen: false,
+                  server: {
+                      ...baseServer,
+                      port: 1420,
+                      strictPort: true,
+                      host: tauriDevHost || false,
+                      hmr: tauriDevHost
+                          ? {
+                                protocol: "ws",
+                                host: tauriDevHost,
+                                port: 1421,
+                            }
+                          : undefined,
+                      watch: {
+                          ignored: ["**/src-tauri/**"],
+                      },
+                  },
+              }
+            : { server: baseServer }),
     };
 });

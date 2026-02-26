@@ -1,0 +1,1 @@
+使用tauri开发时，需要注意是否提前执行 pnpm tauri ios init
