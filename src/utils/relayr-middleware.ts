@@ -1,4 +1,5 @@
 import type { Handler } from "./fetch-proxy";
+import { isInApp } from "./platform";
 
 /**
  * relayr协议解析工具类
@@ -32,6 +33,11 @@ export const relayrMiddleware: Handler = async (url, options, next) => {
 
         // 3. 构建最终的目标 URL (target_base + suffix)
         const finalTargetUrl = `${targetBase}${targetPathSuffix}`;
+
+        // 在 App 时无需使用代理跨域，直接请求最终目标 URL
+        if (isInApp) {
+            return next(finalTargetUrl, options);
+        }
         // 4. 转换请求参数
         const newOptions: RequestInit = {
             ...options,

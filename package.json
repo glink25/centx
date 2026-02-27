@@ -9,7 +9,7 @@
 		"dev:windows": "tauri dev",
 		"dev:macos": "tauri dev",
 		"dev:ios": "tauri ios dev",
-		"dev:android": "tauri dev --target aarch64-linux-android",
+		"dev:android": "tauri android dev",
 		"build": "pnpm run lint && vite build",
 		"build:web": "pnpm run lint && vite build",
 		"build:windows": "tauri build --target x86_64-pc-windows-msvc",

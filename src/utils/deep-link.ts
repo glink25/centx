@@ -51,7 +51,6 @@ export function registerDeepLink(): void {
     console.log("registerDeepLink");
     onOpenUrl((urls) => {
         console.log("urls", urls);
-        toast.success(`urls: ${urls}`);
         const url = urls?.[0];
         if (url) {
             window.dispatchEvent(
