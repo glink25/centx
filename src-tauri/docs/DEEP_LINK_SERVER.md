@@ -1,6 +1,9 @@
 # Deep Link / Universal Link 服务端配置说明
 
-本文档说明如何在站点 **cent.linkai.work** 上配置服务端，以支持 Tauri 客户端的 **Android App Links**、**iOS Universal Links** 以及桌面端的自定义协议跳转（可选）。
+本文档说明如何在站点 **cent.linkai.work** 上配置服务端，以支持 Tauri 客户端的 **Android App Links**、**iOS Universal Links**，以及全平台统一的 **URL Scheme 降级**（`dailycent://`）。
+
+- **优先**：移动端使用 Universal Link / App Link（`https://cent.linkai.work/open/...`），无需用户选择“用 App 打开”。
+- **降级**：当 Universal Link 不可用（如部分浏览器、微信内、未验证域名等）时，使用 **dailycent://** 链接即可通过系统 URL Scheme 唤起已安装的 App。全平台（iOS、Android、Windows、macOS、Linux）统一使用 `dailycent://`。
 
 ---
 
@@ -95,27 +98,38 @@
 
 ## 三、桌面端（Windows / macOS / Linux）
 
-桌面端使用**自定义 URL Scheme**（如 `cent://`、`dailycent://`），无需在 cent.linkai.work 上提供额外文件。只要客户端在 `tauri.conf.json` 的 `plugins.deep-link.desktop.schemes` 中配置了 `cent`、`dailycent` 等，系统会直接唤起已安装的 App。若你希望从网页跳转到桌面客户端，可在页面中放链接，例如：
+桌面端使用**自定义 URL Scheme**：全平台统一为 **dailycent://**。无需在 cent.linkai.work 上提供额外文件，系统会直接唤起已安装的 App。从网页跳转示例：
 
-- `cent://open/add-bills?text=xxx`
 - `dailycent://open/add-bills?text=xxx`
+- `dailycent://open/oauth-callback?gitee_authorized=1&...`
 
 ---
 
-## 四、链接格式与路径约定
+## 四、URL Scheme 降级（全平台统一 dailycent://）
 
-- **Web / Universal Link / App Link**（移动端）：  
+当 Universal Link / App Link 无法唤起 App 时（如微信内、部分浏览器、未验证域名等），可使用 **dailycent://** 作为降级：
+
+- **iOS / Android**：在 `tauri.conf.json` 的 `plugins.deep-link.mobile` 中已配置 `scheme: ["dailycent"]`，与 Universal Link 并存；用户点击 `dailycent://open/...` 即可打开 App。
+- **桌面**：`plugins.deep-link.desktop.schemes` 仅配置 `["dailycent"]`。
+
+前端可用 `@/utils/deep-link` 的 `toDailyCentDeepLink(universalLinkUrl)` 将任意 Universal Link 或路径转为 `dailycent://` 链接，用于“用 App 打开”等降级按钮。
+
+---
+
+## 五、链接格式与路径约定
+
+- **Web / Universal Link / App Link**（优先）：  
   `https://cent.linkai.work/open/...`  
   例如：`https://cent.linkai.work/open/add-bills?text=xxx`
-- **自定义协议**（桌面）：  
-  `cent://open/...` 或 `dailycent://open/...`  
-  例如：`cent://open/add-bills?text=xxx`
+- **降级 / 桌面**（统一 URL Scheme）：  
+  `dailycent://open/...`  
+  例如：`dailycent://open/add-bills?text=xxx`
 
 路径以 `/open/` 为前缀，与 `tauri.conf.json` 中 `pathPrefix: ["/open"]` 及本文档中 iOS 的 `components` 配置一致。
 
 ---
 
-## 五、校验与排查
+## 六、校验与排查
 
 1. **Android**  
    - 浏览器或 curl 访问：`https://cent.linkai.work/.well-known/assetlinks.json`，确认返回合法 JSON 且 `package_name`、`sha256_cert_fingerprints` 正确。  

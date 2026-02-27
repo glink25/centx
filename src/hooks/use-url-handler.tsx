@@ -25,6 +25,28 @@ async function processIncomingUrl(
     }
     const searchParams = url.searchParams;
 
+    // App 内 OAuth 回调（通过 deep-link 回到应用）：与 index.html 一致，写入 _oauth_res 后刷新到首页，由 afterLogin 解析 token
+    if (pathname === "/oauth-callback" || pathname === "/oauth-callback/") {
+        if (searchParams.has("github_authorized")) {
+            localStorage.setItem(
+                "_oauth_res",
+                JSON.stringify({ type: "github", url: urlString }),
+            );
+            localStorage.setItem("SYNC_ENDPOINT", "github");
+            setTimeout(() => location.replace(window.origin), 1);
+            return;
+        }
+        if (searchParams.has("gitee_authorized")) {
+            localStorage.setItem(
+                "_oauth_res",
+                JSON.stringify({ type: "gitee", url: urlString }),
+            );
+            localStorage.setItem("SYNC_ENDPOINT", "gitee");
+            setTimeout(() => location.replace(window.origin), 1);
+            return;
+        }
+    }
+
     if (pathname === "/add-bills" || pathname === "/add-bills/") {
         const text = decodeURIComponent(searchParams.get("text") ?? "");
         if (typeof window !== "undefined") {
@@ -55,7 +77,7 @@ async function processIncomingUrl(
 
 /**
  * 处理标准 URL 链接唤起（含 Tauri deep-link 事件）
- * 支持格式: https://myapp.com/add-bills?text=xxx 或 cent://open/add-bills?text=xxx
+ * 支持格式: https://cent.linkai.work/open/... 或 dailycent://open/...（全平台统一 scheme 降级）
  */
 export function useUrlHandler() {
     const t = useIntl();

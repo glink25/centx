@@ -1,45 +1,51 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "cent-tauri",
-  "version": "0.1.0",
-  "identifier": "com.glink.dailycent",
-  "build": {
-    "beforeDevCommand": "TAURI_VITE=1 pnpm dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "TAURI_VITE=1 pnpm run build",
-    "frontendDist": "../dist"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "cent-tauri",
-        "width": 800,
-        "height": 600
-      }
-    ],
-    "security": {
-      "csp": null
-    }
-  },
-  "plugins": {
-    "deep-link": {
-      "mobile": [
-        { "host": "cent.linkai.work", "pathPrefix": ["/open"] }
-      ],
-      "desktop": {
-        "schemes": ["cent", "dailycent"]
-      }
-    }
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
-  }
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "cent",
+	"version": "0.1.0",
+	"identifier": "com.glink.dailycent",
+	"build": {
+		"beforeDevCommand": "TAURI_VITE=1 pnpm dev",
+		"devUrl": "http://localhost:1420",
+		"beforeBuildCommand": "TAURI_VITE=1 pnpm run build",
+		"frontendDist": "../dist"
+	},
+	"app": {
+		"windows": [
+			{
+				"title": "cent",
+				"width": 800,
+				"height": 600
+			}
+		],
+		"security": {
+			"csp": "default-src 'self' tauri: http: https: 'unsafe-inline';"
+		},
+		"withGlobalTauri": true
+	},
+	"plugins": {
+		"deep-link": {
+			"mobile": [
+				{
+					"scheme": ["dailycent"],
+					"appLink": false
+				}
+			],
+			"desktop": {
+				"schemes": ["dailycent"]
+			}
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": "all",
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico",
+			"icons/icon.png",
+			"icons/ios/*.png"
+		]
+	}
 }

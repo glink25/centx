@@ -1,7 +1,10 @@
 import { asyncOnce } from "@/utils/async";
+import { isInApp, openOAuthLink } from "@/utils/platform";
 
 // 从环境变量读取 LOGIN_API_HOST
 const LOGIN_API_HOST = import.meta.env.VITE_LOGIN_API_HOST;
+
+const APP_OAUTH_CALLBACK_URL = "dailycent://open/oauth-callback";
 const LOCAL_TOKEN_KEY = "gitee_user_token";
 
 const { promise: loginFinished, resolve: resolveLoginFinished } =
@@ -9,10 +12,9 @@ const { promise: loginFinished, resolve: resolveLoginFinished } =
 
 export const createLoginAPI = () => {
     const login = () => {
-        window.open(
-            `${LOGIN_API_HOST}/api/gitee-oauth/authorize?redirect_uri=${encodeURIComponent(`${window.origin}`)}`,
-            "_self",
-        );
+        const redirectUri = isInApp ? APP_OAUTH_CALLBACK_URL : window.origin;
+        const authorizeUrl = `${LOGIN_API_HOST}/api/gitee-oauth/authorize?redirect_uri=${encodeURIComponent(redirectUri)}`;
+        openOAuthLink(authorizeUrl);
     };
 
     const afterLogin = async () => {
