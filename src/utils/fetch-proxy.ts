@@ -1,3 +1,4 @@
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { relayrMiddleware } from "./relayr-middleware";
 
 // 保存原始 fetch
@@ -46,13 +47,26 @@ function composeFetchChain(
     );
 }
 
+const isSafariFamily = () => {
+    const ua = navigator.userAgent.toLowerCase();
+    // 核心逻辑：包含 applewebkit 但不包含 chrome 或 chromium
+    return (
+        ua.includes("applewebkit") &&
+        !ua.includes("chrome") &&
+        !ua.includes("chromium")
+    );
+};
+const isSafari = isSafariFamily();
 // 替换全局 fetch
 self.fetch = async (url: RequestInfo | URL, options: RequestInit = {}) => {
+    // 由于webview实现差异，在iOS中 tauri-plugin-cors-fetch可以正常工作，但在Android中不行，需要使用http插件代替
+    // 但是如果在iOS中也使用http插件替换原生fetch，则会导致页面卡死，所以必须分开处理
+    const fetcher = isSafari ? originalFetch : tauriFetch;
     if (proxyHandlers.length === 0) {
-        return originalFetch(url, options);
+        return fetcher(url, options);
     }
 
-    const composed = composeFetchChain(proxyHandlers, originalFetch);
+    const composed = composeFetchChain(proxyHandlers, fetcher);
     return (composed as any)(url, options);
 };
 

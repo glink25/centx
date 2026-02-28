@@ -18,7 +18,7 @@
 			}
 		],
 		"security": {
-			"csp": "default-src 'self' tauri: http: https: 'unsafe-inline';"
+			"csp": "default-src 'self' tauri: http: https: 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' http: https:;"
 		},
 		"withGlobalTauri": true
 	},
