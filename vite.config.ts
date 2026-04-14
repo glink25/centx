@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { buildSync } from "esbuild";
 import Info from "unplugin-info/vite";
 import { defineConfig, loadEnv, type PluginOption } from "vite";
