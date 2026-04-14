@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/shallow";
 import PopupLayout from "@/layouts/popup-layout";
@@ -8,7 +8,7 @@ import { useLedgerStore } from "@/store/ledger";
 import { useUserStore } from "@/store/user";
 import { cn } from "@/utils";
 import { decodeApiKey, encodeApiKey } from "@/utils/api-key";
-import { requestAI } from "../assistant/request";
+import { requestAIWithConfig } from "../assistant/request";
 import createConfirmProvider from "../confirm";
 import modal from "../modal";
 import { Button } from "../ui/button";
@@ -102,7 +102,7 @@ function ConfigForm({
                 },
             ];
 
-            await requestAI(testMessages, testConfig);
+            await requestAIWithConfig(testMessages, testConfig);
             toast.success(t("connection-success"));
             return;
         } catch (error) {
@@ -491,7 +491,18 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                     {(configs?.length ?? 0) === 0 ? (
                         <div className="text-xs opacity-60 text-center py-8">
-                            {t("no-ai-configs")}
+                            {t("no-ai-configs", {
+                                a: (chunk: ReactNode) => (
+                                    <a
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-500 hover:text-blue-600 underline"
+                                        href="https://glink25.github.io/post/%E5%BC%80%E5%90%AF-Cent-AI-%E5%8A%A9%E6%89%8B%E9%80%9A%E7%94%A8%E9%85%8D%E7%BD%AE%E4%B8%8E%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/"
+                                    >
+                                        {chunk}
+                                    </a>
+                                ),
+                            })}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2">
@@ -594,7 +605,7 @@ export default function AssistantSettingsItem() {
                     <div
                         className={cn(betaClassName, "flex items-center gap-2")}
                     >
-                        <i className="icon-[mdi--robot-outline] size-5"></i>
+                        <i className="icon-[mdi--shimmer-outline] size-5"></i>
                         {t("ai-assistant")}
                     </div>
                     <i className="icon-[mdi--chevron-right] size-5"></i>

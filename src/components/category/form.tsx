@@ -1,9 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod/mini";
+import { z } from "zod";
 import { StorageDeferredAPI } from "@/api/storage";
-import createConfirmProvider from "@/components/confirm";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -28,6 +27,7 @@ import { useIntl } from "@/locale";
 import { useBookStore } from "@/store/book";
 import { cn } from "@/utils";
 import modal from "../modal";
+import { Switch } from "../ui/switch";
 import CategoryIcon from "./icon";
 import { ICONS } from "./icons";
 
@@ -43,6 +43,7 @@ const createFormSchema = (t: any) =>
 
         // 可选字符串
         parent: z.optional(z.string()),
+        defaultSelect: z.optional(z.boolean()),
     });
 
 const allIcons = ICONS;
@@ -81,6 +82,7 @@ export default function CategoryEditForm({
             ? {
                   name: category.name,
                   parent: category.parent,
+                  defaultSelect: category.defaultSelect,
               }
             : {
                   name: "",
@@ -112,6 +114,7 @@ export default function CategoryEditForm({
             icon: edit.icon,
             name: edit.name,
             parent: edit.parent,
+            defaultSelect: edit.defaultSelect,
         };
         const formattedData = {
             ...data,
@@ -120,7 +123,8 @@ export default function CategoryEditForm({
         if (
             originCate.icon === formattedData.icon &&
             originCate.name === formattedData.name &&
-            originCate.parent === formattedData.parent
+            originCate.parent === formattedData.parent &&
+            originCate.defaultSelect === formattedData.defaultSelect
         ) {
             console.log("nothing changed");
             return;
@@ -185,7 +189,7 @@ export default function CategoryEditForm({
                     </div>
                 }
             >
-                <div className="flex justify-center items-center gap-2">
+                <div className="flex justify-center items-center gap-4">
                     <div className="p-4 size-16 aspect-square rounded-full overflow-hidden border flex justify-center items-center">
                         {category?.icon && (
                             <CategoryIcon
@@ -199,12 +203,15 @@ export default function CategoryEditForm({
                             control={form.control}
                             name="name"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t("category-name")}</FormLabel>
+                                <FormItem className="flex justify-between items-center">
+                                    <FormLabel className="mb-0">
+                                        {t("category-name")}:
+                                    </FormLabel>
                                     <FormControl>
                                         <Input
                                             type="text"
                                             maxLength={50}
+                                            className="max-w-[60%]"
                                             {...field}
                                         />
                                     </FormControl>
@@ -222,9 +229,9 @@ export default function CategoryEditForm({
                                         ? NO_PARENT
                                         : field.value;
                                 return (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t("category-parent")}
+                                    <FormItem className="flex justify-between items-center">
+                                        <FormLabel className="mb-0">
+                                            {t("category-parent")}:
                                         </FormLabel>
                                         <FormControl>
                                             <Select
@@ -286,6 +293,34 @@ export default function CategoryEditForm({
                                 );
                             }}
                         ></FormField>
+                        {
+                            <FormField
+                                control={form.control}
+                                name="defaultSelect"
+                                render={({ field }) => {
+                                    return (
+                                        <FormItem className="flex justify-between items-center h-9">
+                                            <FormLabel className="mb-0">
+                                                {t(
+                                                    "sub-category-default-select",
+                                                )}
+                                                :
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={Boolean(
+                                                        field.value,
+                                                    )}
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    );
+                                }}
+                            ></FormField>
+                        }
                     </div>
                 </div>
 
@@ -356,13 +391,21 @@ export default function CategoryEditForm({
                             className="w-full h-full flex flex-col gap-2 m-0"
                         >
                             <div className="w-full h-full flex flex-col gap-2">
-                                <div className="text-sm opacity-80 flex justify-between items-center px-2">
-                                    <div>{t("copy-and-paste-svg-below")}:</div>
+                                <div className="text-sm opacity-80 flex justify-between items-center px-2 gap-2">
+                                    <div className="flex flex-col gap-1">
+                                        <div>
+                                            {t("copy-and-paste-svg-below")}:
+                                        </div>
+                                        <div className="text-xs opacity-60">
+                                            {t("icon-svg-tip")}
+                                        </div>
+                                    </div>
+
                                     <Button size="sm">{t("clear")}</Button>
                                 </div>
                                 <textarea
                                     className="w-full flex-1 border rounded-lg p-2"
-                                    placeholder={`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/></svg>`}
+                                    placeholder={`<svg data-render="mask" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"/></svg>`}
                                     onChange={(e) => {
                                         const svgText = e.currentTarget.value;
                                         if (

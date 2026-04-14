@@ -1,4 +1,5 @@
 // @annotation: Full 在这里并无实际作用，只是用于拓展一些额外内容，无需考虑，Full<T> 可视为等价于 T
+import type { Widget } from "@/components/widget/type";
 import type { Full } from "@/database/stash";
 // @annotation: 其他工具type，无需考虑
 import type {
@@ -90,6 +91,8 @@ export type BillCategory = {
     customName?: boolean;
     // 父类的id，如果为空，则该分类视为父类
     parent?: string;
+    // 默认选中，仅对子类生效，如果为true，则该子类的父类在首次选中时，首先会选中该子类，再次点击父类可以选中父类
+    defaultSelect?: boolean;
 };
 
 /** 每笔账单可以设置多个BillTag，一般用于标记这些支出或者收入项与某些事件相关联
@@ -124,6 +127,8 @@ export type GlobalMeta = {
         amapKey?: string;
         amapSecurityCode?: string;
     };
+    // Widget列表
+    widgets?: Widget[];
 };
 
 // 这是最终导出的核心JSON数据结构，使用这个数据结构可以直接被解析成可以识别的数据

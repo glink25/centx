@@ -1,15 +1,14 @@
 import { Switch } from "radix-ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import useCategory from "@/hooks/use-category";
 import { useCurrency } from "@/hooks/use-currency";
-import { useTag } from "@/hooks/use-tag";
+import { useWheelScrollX } from "@/hooks/use-wheel-scroll";
 import PopupLayout from "@/layouts/popup-layout";
 import { amountToNumber, numberToAmount } from "@/ledger/bill";
 import { ExpenseBillCategories, IncomeBillCategories } from "@/ledger/category";
 import type { Bill } from "@/ledger/type";
 import { categoriesGridClassName } from "@/ledger/utils";
-import { useIntl, useLocale } from "@/locale";
+import { useIntl } from "@/locale";
 import type { EditBill } from "@/store/ledger";
 import { usePreferenceStore } from "@/store/preference";
 import { cn } from "@/utils";
@@ -24,16 +23,10 @@ import SmartImage from "../image";
 import IOSUnscrolledInput from "../input";
 import Calculator from "../keyboard";
 import CurrentLocation from "../simple-location";
-import Tag from "../tag";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { goAddBill } from ".";
 import { RemarkHint } from "./remark";
+import ResizeHandle from "./resize";
 import TagGroupSelector from "./tag-group";
 
 const defaultBill = {
@@ -88,12 +81,29 @@ export default function EditorForm({
         return pc;
     }, [isCreate]);
 
+    const getMatchDefaultCategory = (categoryId: string) => {
+        const category = [...incomes, ...expenses].find(
+            (c) => c.id === categoryId,
+        );
+        if (!category) {
+            return categoryId;
+        }
+        const defaultSub = category.children.find((v) => v.defaultSelect);
+        if (!defaultSub) {
+            return categoryId;
+        }
+        return defaultSub.id;
+    };
     const [billState, setBillState] = useState(() => {
         const init = {
             ...defaultBill,
-            categoryId: predictCategory?.id ?? defaultBill.categoryId,
             time: Date.now(),
             ...edit,
+            categoryId:
+                predictCategory?.id ??
+                getMatchDefaultCategory(
+                    edit?.categoryId ?? defaultBill.categoryId,
+                ),
         };
         if (edit?.currency?.target === baseCurrency.id) {
             delete init.currency;
@@ -101,7 +111,28 @@ export default function EditorForm({
         return init;
     });
 
-    const { grouped } = useTag();
+    const handleParentCategoryClick = (parentCategoryId: string) => {
+        // 点击父类时，如果此前选中的【是该父类的子类】，则直接选中该父类
+        // 否则选中该父类的 MatchDefault 类别
+        setBillState((prev) => {
+            const parentCategory = [...incomes, ...expenses].find(
+                (c) => c.id === parentCategoryId,
+            );
+            const isPrevParentsChild = parentCategory?.children.some(
+                (c) => c.id === prev.categoryId,
+            );
+            if (isPrevParentsChild) {
+                return {
+                    ...prev,
+                    categoryId: parentCategoryId,
+                };
+            }
+            return {
+                ...prev,
+                categoryId: getMatchDefaultCategory(parentCategoryId),
+            };
+        });
+    };
 
     const categories = billState.type === "expense" ? expenses : incomes;
 
@@ -209,6 +240,9 @@ export default function EditorForm({
         }
         return "triple-zero";
     });
+
+    const tagSelectorRef = useRef<HTMLDivElement>(null);
+    useWheelScrollX(tagSelectorRef);
     return (
         <Calculator.Root
             multiplyKey={multiplyKey}
@@ -240,7 +274,7 @@ export default function EditorForm({
             input={monitorFocused}
         >
             <PopupLayout
-                className="h-full gap-2 pb-0 overflow-y-auto scrollbar-hidden"
+                className="h-full gap-2 pb-0 scrollbar-hidden"
                 onBack={goBack}
                 title={
                     <div className="pl-[54px] w-full min-h-12 rounded-lg flex pt-2 pb-0 overflow-hidden scrollbar-hidden">
@@ -349,10 +383,7 @@ export default function EditorForm({
                                     category={item}
                                     selected={billState.categoryId === item.id}
                                     onMouseDown={() => {
-                                        setBillState((v) => ({
-                                            ...v,
-                                            categoryId: item.id,
-                                        }));
+                                        handleParentCategoryClick(item.id);
                                     }}
                                 />
                             ))}
@@ -401,7 +432,10 @@ export default function EditorForm({
                     )}
                 </div>
                 {/* tags */}
-                <div className="w-full h-[40px] flex-shrink-0 flex-grow-0 flex gap-1 py-1 items-center overflow-x-auto px-2 text-sm font-medium scrollbar-hidden">
+                <div
+                    ref={tagSelectorRef}
+                    className="w-full h-[40px] flex-shrink-0 flex-grow-0 flex gap-1 py-1 items-center overflow-x-auto px-2 text-sm font-medium scrollbar-hidden"
+                >
                     <TagGroupSelector
                         isCreate={isCreate}
                         selectedTags={billState.tagIds}
@@ -433,9 +467,10 @@ export default function EditorForm({
                 <div
                     className={cn(
                         "h-[calc(480px+160px*(var(--bekh,0.5)-0.5))] sm:h-[calc(380px+160px*(var(--bekh,0.5)-0.5))] min-h-[264px] max-h-[calc(100%-124px)]",
-                        "keyboard-field flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]",
+                        "keyboard-field relative flex gap-2 flex-col justify-start bg-stone-900 sm:rounded-b-md text-[white] p-2 pb-[max(env(safe-area-inset-bottom),8px)]",
                     )}
                 >
+                    <ResizeHandle />
                     <div className="flex justify-between items-center">
                         <div className="flex gap-2 items-center h-10">
                             <div className="flex items-center h-full">

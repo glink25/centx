@@ -96,6 +96,26 @@ export default defineConfig(({ mode }) => {
 
     return {
         plugins,
+        build: {
+            rollupOptions: {
+                output: {
+                    manualChunks: (id) => {
+                        if (id.includes("zod")) {
+                            return "zod";
+                        }
+                        if (id.includes("@dnd-kit")) {
+                            return "dndkit";
+                        }
+                        if (id.includes("echarts")) {
+                            return "echarts";
+                        }
+                        if (id.includes("react-day-picker")) {
+                            return "reactDayPicker";
+                        }
+                    },
+                },
+            },
+        },
         resolve: {
             alias: {
                 "@": resolve("./src"),

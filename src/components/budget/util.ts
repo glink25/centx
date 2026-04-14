@@ -39,12 +39,21 @@ export const budgetRange = (
         let rangeEnd: Dayjs;
         // 使用 add() 和 subtract(1, 'day') 确保范围的边界准确
         if (unit === "month") {
-            rangeEnd = rangeStart.add(value, "month").subtract(1, "day");
+            rangeEnd = rangeStart
+                .add(value, "month")
+                .subtract(1, "day")
+                .endOf("day");
         } else if (unit === "year") {
-            rangeEnd = rangeStart.add(value, "year").subtract(1, "day");
+            rangeEnd = rangeStart
+                .add(value, "year")
+                .subtract(1, "day")
+                .endOf("day");
         } else {
             // 'week' or 'day'
-            rangeEnd = rangeStart.add(value, unit).subtract(1, "day");
+            rangeEnd = rangeStart
+                .add(value, unit)
+                .subtract(1, "day")
+                .endOf("day");
         }
 
         // 如果计算出的周期结束日期超过了预算的结束日期，则截断
@@ -79,7 +88,12 @@ export const budgetEncountered = (
     currentRange: [Dayjs, Dayjs],
     allCategories: BillCategory[],
 ) => {
-    const filtered = filterOrderedBillListByTimeRange(bills, currentRange);
+    const filtered = filterOrderedBillListByTimeRange(
+        bills,
+        currentRange,
+        true,
+        (v) => budget.joiners.includes(v.creatorId),
+    );
     let totalUsed = 0;
     const categoriesUsed = budget.categoriesBudget?.map((c) => ({
         id: c.id,

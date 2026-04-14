@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { toast } from "sonner";
 import {
     calcNextDate,
     fillScheduledBills,
@@ -7,6 +8,7 @@ import {
 import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 import { useLedgerStore } from "@/store/ledger";
+import { isCancelError } from "../confirm/state";
 import modal from "../modal";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
@@ -90,17 +92,35 @@ export default function ScheduledListForm({
                                                 const needBills =
                                                     await fillScheduledBills(s);
                                                 if (needBills.length > 0) {
-                                                    await modal.prompt({
-                                                        title: t(
-                                                            "scheduled-lack-bills",
-                                                            {
-                                                                n: needBills.length,
-                                                            },
-                                                        ),
-                                                    });
-                                                    useLedgerStore
-                                                        .getState()
-                                                        .addBills(needBills);
+                                                    try {
+                                                        await modal.prompt({
+                                                            title: t(
+                                                                "scheduled-lack-bills",
+                                                                {
+                                                                    n: needBills.length,
+                                                                },
+                                                            ),
+                                                        });
+                                                        useLedgerStore
+                                                            .getState()
+                                                            .addBills(
+                                                                needBills,
+                                                            );
+                                                    } catch (err) {
+                                                        console.log(
+                                                            isCancelError(err),
+                                                            "isCancelError(err)",
+                                                        );
+                                                        if (
+                                                            !isCancelError(err)
+                                                        ) {
+                                                            throw err;
+                                                        }
+
+                                                        toast.warning(
+                                                            "已忽略此前的账单",
+                                                        );
+                                                    }
                                                 }
                                             }
                                             await update(s.id, {

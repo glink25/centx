@@ -138,7 +138,7 @@ export async function fillScheduledBills(scheduled: Scheduled) {
         scheduled.repeat.value,
         scheduled.repeat.unit,
         scheduled.start,
-        scheduled.latest ?? scheduled.start,
+        scheduled.start,
         Math.min(scheduled.end ?? Date.now(), Date.now()),
     );
 

@@ -16,7 +16,13 @@ type InstanceState<Value = any, Returned = any> = {
         promise: Promise<Returned>;
         cancel: () => void;
     };
+    openId: string;
 };
+
+const CANCEL_ERROR_MSG = "manually cancelled";
+
+export const isCancelError = (error: unknown) =>
+    error instanceof Error && error.message === CANCEL_ERROR_MSG;
 
 // 全局 Store 的总状态
 type GlobalConfirmState = {
@@ -41,6 +47,7 @@ export const useGlobalConfirmStore = create<
         const controller = get().instances[id]?.controller;
         if (controller) return [controller.promise, controller.cancel] as const;
 
+        const openId = `id-${Date.now()}`;
         const { promise, reject, resolve } = Promise.withResolvers<any>();
 
         let cancelled = false;
@@ -49,7 +56,7 @@ export const useGlobalConfirmStore = create<
                 return;
             }
             cancelled = true;
-            reject();
+            reject(new Error(CANCEL_ERROR_MSG));
             get().update(id, {
                 visible: false,
                 controller: undefined,
@@ -74,6 +81,7 @@ export const useGlobalConfirmStore = create<
                     visible: true,
                     zIndex: CONFIRM_DIALOG_BASE_Z + visibleCount,
                     edit: value,
+                    openId,
                     controller: {
                         resolve,
                         reject,
