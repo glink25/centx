@@ -9,7 +9,8 @@ import { createHtmlPlugin } from "vite-plugin-html";
 import { VitePWA } from "vite-plugin-pwa";
 import svgr from "vite-plugin-svgr";
 
-const isTauri = process.env.TAURI_VITE === "1";
+const isTauri =
+    process.env.TAURI_VITE === "1" || !!process.env.TAURI_ENV_PLATFORM;
 const tauriDevHost = process.env.TAURI_DEV_HOST;
 
 /** jieba-wasm 未导出 .wasm；且 worker 子打包不会套用 resolve.alias，故用插件统一解析（含 ?url） */

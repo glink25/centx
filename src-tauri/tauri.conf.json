@@ -4,9 +4,9 @@
 	"version": "0.1.0",
 	"identifier": "com.glink.dailycent",
 	"build": {
-		"beforeDevCommand": "TAURI_VITE=1 pnpm dev",
+		"beforeDevCommand": "pnpm dev",
 		"devUrl": "http://localhost:1420",
-		"beforeBuildCommand": "TAURI_VITE=1 pnpm run build",
+		"beforeBuildCommand": "pnpm run build",
 		"frontendDist": "../dist"
 	},
 	"app": {
@@ -101,8 +101,7 @@
 			"icons/icon.icns",
 			"icons/icon.ico",
 			"icons/icon.png",
-			"icons/ios/*.png",
-			"icons/android"
+			"icons/ios/*.png"
 		]
 	}
 }
