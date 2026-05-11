@@ -20,6 +20,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init());
 
+    #[cfg(not(target_os = "ios"))]
+    let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
+
     #[cfg(desktop)]
     let builder = builder.manage(agent_api::AgentApiState::default());
 

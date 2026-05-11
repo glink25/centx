@@ -28,7 +28,7 @@ pnpm build:linux          # x86_64 GNU Linux
 pnpm build:windows        # x86_64 Windows MSVC
 ```
 
-在任一桌面系统上也可直接使用 `pnpm tauri dev` / `pnpm tauri build`（当前宿主默认目标）。**无法从单一开发机无依赖地「一次构建出三端」**；若需集中产出，请使用 CI（见仓库 `.github/workflows/tauri-desktop.yml`）在 macOS / Linux / Windows 的 GitHub Actions runner 上分别构建。
+在任一桌面系统上也可直接使用 `pnpm tauri dev` / `pnpm tauri build`（当前宿主默认目标）。**无法从单一开发机无依赖地「一次构建出三端」**；若需集中产出，请使用 CI（见仓库 `.github/workflows/release.yml`）在 macOS / Linux / Windows 的 GitHub Actions runner 上分别构建。
 
 **Deep Link（桌面）：** 已在 `tauri.conf.json` 的 `plugins.deep-link.desktop.schemes` 中配置 `dailycent`；安装后由系统按平台注册自定义协议，OAuth 等流程可与 [DEEP_LINK_SERVER.md](./DEEP_LINK_SERVER.md) 中的移动端说明一并对照（桌面无 App Links，主要为 URL scheme）。
 

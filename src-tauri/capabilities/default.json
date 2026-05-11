@@ -15,6 +15,8 @@
 		"cors-fetch:default",
 		"oauth:allow-start",
 		"oauth:allow-cancel",
-		"clipboard-manager:allow-write-text"
+		"clipboard-manager:allow-write-text",
+		"updater:default",
+		"process:allow-restart"
 	]
 }

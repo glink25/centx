@@ -23,6 +23,17 @@
 		"withGlobalTauri": true
 	},
 	"plugins": {
+		"updater": {
+			"active": true,
+			"dialog": false,
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4MzEwNUM5N0ZFMTQ0RUQKUldUdFJPRi95UVV4V0RvbGR5UzlRUzVDdUdaQWowcU5JQVlXanhWODFobzBVUjdUMFQvS0oyQSsK",
+			"endpoints": [
+				"https://github.com/glink25/cent-tauri/releases/latest/download/latest.json"
+			],
+			"windows": {
+				"installMode": "passive"
+			}
+		},
 		"deep-link": {
 			"mobile": [
 				{

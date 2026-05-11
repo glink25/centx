@@ -36,3 +36,7 @@ registerDeepLink();
 import("./agent-api/lifecycle").then(({ bootAgentApi }) => {
     void bootAgentApi();
 });
+
+import("./lib/updater/native").then(({ startNativeUpdateCheck }) => {
+    void startNativeUpdateCheck();
+});
