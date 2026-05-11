@@ -5,6 +5,7 @@ import { StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
+import { ImportPreviewProvider } from "./components/data-manager/preview-form";
 import Login from "./components/login";
 import { initIntl, LocaleProvider } from "./locale/index";
 import { usePreferenceStore } from "./store/preference";
@@ -23,6 +24,7 @@ initIntl(lang).then(() => {
                     <Rooot />
                 </Suspense>
                 <Login />
+                <ImportPreviewProvider />
             </LocaleProvider>
         </StrictMode>,
     );

@@ -23,6 +23,7 @@ import { showFilePicker } from "@/components/file-picker";
 import { useIntl } from "@/locale";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { DebugLogPanel } from "./debug-panel";
 import { MessageBubble } from "./message";
 import { useAssistantChatStore } from "./state";
 import { CentAIConfig } from "./tools";
@@ -330,6 +331,7 @@ function Content() {
 
     return (
         <div className="w-full flex-1 flex flex-col overflow-hidden relative">
+            <DebugLogPanel />
             <div className="hidden md:flex justify-center items-center py-2 h-12">
                 <div>{t("ai-assistant")}</div>
                 <div className="absolute right-2">

@@ -11,11 +11,7 @@ import modal from "../modal";
 import { Button } from "../ui/button";
 import { prepareExportFile, processImportFile } from "./exportable";
 import { showOncentImport } from "./oncent";
-import {
-    ImportPreviewProvider,
-    importFromPreviewResult,
-    showImportPreview,
-} from "./preview-form";
+import { importFromPreviewResult, showImportPreview } from "./preview-form";
 import { SmartImport } from "./smart-import";
 
 const [SmartImportProvider, showSmartImport] = createConfirmProvider(
@@ -149,7 +145,6 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                 </div>
             </div>
-            <ImportPreviewProvider />
             <SmartImportProvider />
         </PopupLayout>
     );
