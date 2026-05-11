@@ -26,4 +26,12 @@ tauri-plugin-deep-link = "2"
 tauri-plugin-http = "2"
 tauri-plugin-cors-fetch = "5.0.0"
 tauri-plugin-oauth = "2"
+tauri-plugin-clipboard-manager = "2"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+axum = { version = "0.7", default-features = false, features = ["http1", "json", "tokio", "matched-path"] }
+tokio = { version = "1", features = ["sync", "rt-multi-thread", "macros", "time", "net"] }
+tower-http = { version = "0.5", features = ["cors"] }
+uuid = { version = "1", features = ["v4"] }
+subtle = "2"
 

@@ -29,6 +29,7 @@ dist-ssr
 
 # ai customize
 .claude
+.cursor
 
 # Rust build artifacts
 src-tauri/target

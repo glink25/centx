@@ -13,6 +13,7 @@ import ScheduledSettingsItems from "../scheduled/settings-item";
 import { Button } from "../ui/button";
 import WidgetSettings from "../widget";
 import AboutSettingsItem, { AdvancedGuideItem } from "./about";
+import AgentApiSettingsItem from "./agent-api";
 import AssistantSettingsItem from "./assistant";
 import LabSettingsItem from "./lab";
 import LanguageSettingsItem from "./language";
@@ -124,6 +125,7 @@ export default function SettingsForm({
                         <div className="text-xs opacity-60 px-8">{t("ai")}</div>
                         <div className="flex flex-col divide-y">
                             <AssistantSettingsItem />
+                            <AgentApiSettingsItem />
                             {showRelyr && <QuickEntrySettingsItem />}
                             <VoiceSettingsItem />
                         </div>

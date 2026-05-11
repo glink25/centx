@@ -30,3 +30,7 @@ initIntl(lang).then(() => {
 
 registerLaunchQueue();
 registerDeepLink();
+
+import("./agent-api/lifecycle").then(({ bootAgentApi }) => {
+    void bootAgentApi();
+});

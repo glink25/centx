@@ -1,3 +1,5 @@
+import { isInApp } from "./platform";
+
 export function readClipboardSync() {
     let clipboardText: string | null = null;
     // 必须在可编辑元素中执行 'paste' 命令
@@ -44,7 +46,7 @@ export async function readClipboard(): Promise<{
     let clipboardFiles: File[] | null = null;
 
     // 1. 检查 Clipboard API 和 read() 方法支持
-    if (navigator.clipboard && navigator.clipboard.read) {
+    if (navigator.clipboard?.read) {
         try {
             // 尝试使用 read() 读取所有类型的剪贴板数据（包括文件/图片等）
             clipboardItems = await navigator.clipboard.read();
@@ -125,4 +127,40 @@ export async function readClipboard(): Promise<{
         items: clipboardItems,
         files: clipboardFiles,
     };
+}
+
+function copyTextWithExecCommand(text: string): void {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    if (!ok) {
+        throw new Error("execCommand('copy') failed");
+    }
+}
+
+/** Tauri WebView 常拒绝 Async Clipboard API；壳内走原生写入，Web 端再降级。 */
+export async function copyTextToClipboard(text: string): Promise<void> {
+    if (isInApp) {
+        const { writeText } = await import(
+            "@tauri-apps/plugin-clipboard-manager"
+        );
+        await writeText(text);
+        return;
+    }
+    if (navigator.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return;
+        } catch {
+            /* fall through */
+        }
+    }
+    copyTextWithExecCommand(text);
 }
