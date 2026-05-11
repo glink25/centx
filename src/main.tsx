@@ -40,3 +40,10 @@ import("./agent-api/lifecycle").then(({ bootAgentApi }) => {
 import("./lib/updater/native").then(({ startNativeUpdateCheck }) => {
     void startNativeUpdateCheck();
 });
+
+import("./lib/updater/web").then(
+    ({ startWebOtaCheck, scheduleMarkHealthy }) => {
+        scheduleMarkHealthy();
+        void startWebOtaCheck();
+    },
+);

@@ -738,5 +738,18 @@
   "untitled-chat": "新对话",
   "no-chats": "暂无对话",
   "meet-widget-api": "开始自定义属于你的账单小组件",
-  "advanced-search": "高级搜索"
+  "advanced-search": "高级搜索",
+  "app-update": "应用更新",
+  "native-version": "应用版本",
+  "web-version": "前端版本",
+  "check-updates": "检查更新",
+  "checking": "检查中…",
+  "no-updates-available": "已是最新",
+  "auto-restart-on-update": "下载完成后自动重启",
+  "auto-restart-on-update-tip": "关闭时仅在右下角提示，由你手动选择重启时机",
+  "trial-running": "试运行中",
+  "trial-running-tip": "稳定运行后会自动确认；连续异常将回滚到上一版本",
+  "previous-version": "回退版本",
+  "pending-version": "下次启动生效",
+  "restart-now": "立即重启"
 }

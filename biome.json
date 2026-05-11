@@ -16,7 +16,8 @@
 			"!**/public",
 			"!.*",
 			"!src/locale/lang/**/*.json",
-			"!**/*.config.js"
+			"!**/*.config.js",
+			"!scripts"
 		]
 	},
 	"formatter": {

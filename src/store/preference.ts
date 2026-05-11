@@ -23,6 +23,8 @@ type State = {
     voiceRecordingEnabled?: boolean;
     /** 是否使用键盘输入代替语言识别 */
     voiceByKeyboard?: boolean;
+    /** native 安装包下载完后自动重启更新 */
+    autoRestartOnUpdate?: boolean;
     /** relayr中转服务配置 */
     relayr?: {
         enable?: boolean;

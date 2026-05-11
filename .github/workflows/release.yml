@@ -1,4 +1,9 @@
-name: Release
+name: Release (full)
+
+# Full release: builds native installers for all desktop platforms,
+# generates latest.json (consumed by tauri-plugin-updater), and also
+# publishes a fresh web bundle to the rolling `web-latest` release so
+# every full release also refreshes the web OTA channel.
 
 on:
   push:
@@ -101,3 +106,53 @@ jobs:
           includeUpdaterJson: true
           updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
+
+  web-bundle:
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm run build
+
+      - name: Pack & sign web bundle (points zip url at web-latest rolling release)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          WEB_BUNDLE_DOWNLOAD_URL_BASE: https://github.com/${{ github.repository }}/releases/download/web-latest
+        run: node scripts/pack-web-bundle.mjs
+
+      - name: Move web-latest rolling tag
+        run: |
+          git tag -f web-latest
+          git push -f origin web-latest
+
+      - name: Publish web bundle to rolling release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: web-latest
+          name: Web bundle (rolling)
+          prerelease: true
+          make_latest: "false"
+          files: |
+            release-assets/web-bundle-*.zip
+            release-assets/web-bundle-*.zip.sig
+            release-assets/web-latest.json

@@ -727,5 +727,18 @@
   "untitled-chat": "New Chat",
   "no-chats": "No Chats",
   "meet-widget-api": "Customize your own widget",
-  "advanced-search": "advanced search"
+  "advanced-search": "advanced search",
+  "app-update": "App update",
+  "native-version": "App version",
+  "web-version": "Web version",
+  "check-updates": "Check for updates",
+  "checking": "Checking…",
+  "no-updates-available": "Up to date",
+  "auto-restart-on-update": "Auto-restart when download finishes",
+  "auto-restart-on-update-tip": "When off, a toast prompts you to restart at your own convenience",
+  "trial-running": "Trial running",
+  "trial-running-tip": "Auto-confirmed once stable; repeated failures roll back to the previous version",
+  "previous-version": "Previous version",
+  "pending-version": "Activates on next launch",
+  "restart-now": "Restart now"
 }

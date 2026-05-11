@@ -1,0 +1,73 @@
+name: Release (web-only)
+
+# Triggered by `web-v*` tags (e.g. web-v1.5.1). Builds ONLY the frontend,
+# packs + minisign-signs the web bundle, and refreshes the rolling
+# `web-latest` release. Does not touch native installers or latest.json,
+# so clients won't be prompted to download a new native binary.
+#
+# Bump `package.json` `version` (frontend version) BEFORE tagging.
+# Leave `src-tauri/tauri.conf.json` and `Cargo.toml` versions unchanged.
+
+on:
+  push:
+    tags:
+      - "web-v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name (e.g. web-v1.5.1)"
+        required: true
+
+concurrency:
+  group: release-web-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  web:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm run build
+
+      - name: Pack & sign web bundle
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          WEB_BUNDLE_DOWNLOAD_URL_BASE: https://github.com/${{ github.repository }}/releases/download/web-latest
+        run: node scripts/pack-web-bundle.mjs
+
+      - name: Move web-latest rolling tag
+        run: |
+          git tag -f web-latest
+          git push -f origin web-latest
+
+      - name: Publish web bundle to rolling release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: web-latest
+          name: Web bundle (rolling)
+          prerelease: true
+          make_latest: "false"
+          files: |
+            release-assets/web-bundle-*.zip
+            release-assets/web-bundle-*.zip.sig
+            release-assets/web-latest.json

@@ -28,6 +28,16 @@ tauri-plugin-cors-fetch = "5.0.0"
 tauri-plugin-oauth = "2"
 tauri-plugin-clipboard-manager = "2"
 
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+minisign-verify = "0.2"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+sha2 = "0.10"
+semver = "1"
+hex = "0.4"
+futures-util = "0.3"
+base64 = "0.22"
+thiserror = "1"
+
 [target.'cfg(not(any(target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"

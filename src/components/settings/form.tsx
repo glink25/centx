@@ -21,6 +21,7 @@ import MapSettingsItem from "./map-settings";
 import PresetSettingsItem from "./preset";
 import QuickEntrySettingsItem from "./quick-entry";
 import ThemeSettingsItem from "./theme";
+import UpdateSettingsItem from "./update";
 import UserSettingsItem from "./user";
 import VoiceSettingsItem from "./voice";
 
@@ -150,6 +151,7 @@ export default function SettingsForm({
                         <div className="flex flex-col divide-y">
                             <MapSettingsItem />
                             <LabSettingsItem />
+                            <UpdateSettingsItem />
                             <AboutSettingsItem />
                             <ThemeSettingsItem />
                             <LanguageSettingsItem />

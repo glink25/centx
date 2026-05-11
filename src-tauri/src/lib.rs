@@ -1,4 +1,5 @@
 mod agent_api;
+mod web_ota;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -20,6 +21,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init());
 
+    let builder = builder
+        .manage(web_ota::WebOta::default())
+        .register_uri_scheme_protocol("centapp", |ctx, request| {
+            web_ota::handle_request(ctx.app_handle(), request)
+        })
+        .setup(|app| {
+            web_ota::check_trial_and_rollback(app.handle());
+            web_ota::promote_pending(app.handle());
+            Ok(())
+        });
+
     #[cfg(not(target_os = "ios"))]
     let builder = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -36,6 +48,9 @@ pub fn run() {
             agent_api::agent_api_stop,
             agent_api::agent_api_status,
             agent_api::agent_api_respond,
+            web_ota::web_ota_check,
+            web_ota::web_ota_state,
+            web_ota::web_ota_mark_healthy,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
