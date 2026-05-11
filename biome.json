@@ -12,6 +12,7 @@
 			"!**/dist",
 			"!**/node_modules",
 			"!**/src-tauri",
+			"!**/cli",
 			"!**/public",
 			"!.*",
 			"!src/locale/lang/**/*.json",

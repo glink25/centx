@@ -1,0 +1,39 @@
+{
+  "name": "cent-cli",
+  "version": "0.0.1",
+  "description": "Cent CLI - command-line interface for Cent ledger",
+  "type": "module",
+  "bin": {
+    "cent-cli": "./dist/bin/cent-cli.js"
+  },
+  "files": [
+    "dist",
+    "skill"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node ./dist/bin/cent-cli.js",
+    "test:smoke": "bash scripts/smoke.sh"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@octokit/core": "^7.0.6",
+    "@octokit/plugin-paginate-rest": "^14.0.0",
+    "cac": "^6.7.14",
+    "cli-table3": "^0.6.5",
+    "dayjs": "^1.11.20",
+    "js-base64": "^3.7.8",
+    "level": "^10.0.0",
+    "lodash-es": "^4.17.21",
+    "webdav": "^5.8.0"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.0"
+  }
+}
