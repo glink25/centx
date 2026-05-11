@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { buildSync } from "esbuild";
 import Info from "unplugin-info/vite";
-import { defineConfig, loadEnv, type PluginOption } from "vite";
+import { defineConfig, loadEnv, type Plugin, type PluginOption } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
 import { createHtmlPlugin } from "vite-plugin-html";
 import { VitePWA } from "vite-plugin-pwa";
@@ -12,6 +12,26 @@ import svgr from "vite-plugin-svgr";
 const isTauri = process.env.TAURI_VITE === "1";
 const tauriDevHost = process.env.TAURI_DEV_HOST;
 
+/** jieba-wasm 未导出 .wasm；且 worker 子打包不会套用 resolve.alias，故用插件统一解析（含 ?url） */
+const JIEBA_RS_WASM_BG = "jieba-rs-wasm-bg";
+function jiebaRsWasmBgResolve(): Plugin {
+    const wasmAbs = resolve(
+        "./node_modules/jieba-wasm/pkg/web/jieba_rs_wasm_bg.wasm",
+    );
+    return {
+        name: "jieba-rs-wasm-bg-resolve",
+        enforce: "pre",
+        resolveId(id) {
+            if (
+                id === JIEBA_RS_WASM_BG ||
+                id.startsWith(`${JIEBA_RS_WASM_BG}?`)
+            ) {
+                return `${wasmAbs}${id.slice(JIEBA_RS_WASM_BG.length)}`;
+            }
+        },
+    };
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd());
@@ -19,6 +39,7 @@ export default defineConfig(({ mode }) => {
     const shouldAnalyze = process.env.ANALYZE === "true";
 
     const plugins: PluginOption[] = [
+        jiebaRsWasmBgResolve(),
         Info(),
         createHtmlPlugin({
             inject: {
@@ -123,6 +144,7 @@ export default defineConfig(({ mode }) => {
         },
         worker: {
             format: "es",
+            plugins: () => [jiebaRsWasmBgResolve()],
         },
         // Tauri 开发/构建时使用固定端口与 HMR，并保留原有 proxy
         ...(isTauri

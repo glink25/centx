@@ -2,6 +2,11 @@
 /// <reference types="unplugin-info/client" />
 /// <reference types="vite-plugin-svgr/client" />
 
+declare module "jieba-rs-wasm-bg?url" {
+    const url: string;
+    export default url;
+}
+
 // node-forge 子模块类型声明（用于按需导入）
 declare module "node-forge/lib/forge" {
     const forge: unknown;

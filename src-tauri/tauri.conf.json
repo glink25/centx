@@ -42,6 +42,47 @@
 			"minSdkVersion": 24,
 			"autoIncrementVersionCode": false
 		},
+		"linux": {
+			"appimage": {
+				"bundleMediaFramework": false,
+				"files": {}
+			},
+			"deb": {
+				"files": {}
+			},
+			"rpm": {
+				"epoch": 0,
+				"files": {},
+				"release": "1"
+			}
+		},
+		"macOS": {
+			"dmg": {
+				"appPosition": {
+					"x": 180,
+					"y": 170
+				},
+				"applicationFolderPosition": {
+					"x": 480,
+					"y": 170
+				},
+				"windowSize": {
+					"height": 400,
+					"width": 660
+				}
+			},
+			"files": {},
+			"hardenedRuntime": true,
+			"minimumSystemVersion": "10.13"
+		},
+		"windows": {
+			"allowDowngrades": true,
+			"tsp": false,
+			"webviewInstallMode": {
+				"silent": true,
+				"type": "downloadBootstrapper"
+			}
+		},
 		"icon": [
 			"icons/32x32.png",
 			"icons/128x128.png",

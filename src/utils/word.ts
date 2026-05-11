@@ -1,5 +1,5 @@
-const WASM_URL =
-    "https://cdn.jsdelivr.net/npm/jieba-wasm@2.4.0/pkg/web/jieba_rs_wasm_bg.wasm";
+import wasmUrl from "jieba-rs-wasm-bg?url";
+import init, * as jiebaModule from "jieba-wasm";
 
 type JiebaLib = {
     cut: (text: string, x: boolean) => string[];
@@ -80,16 +80,10 @@ export async function initializeWasm() {
         return jiebaModuleLoaded;
     }
 
-    console.log("正在动态加载 jieba-wasm...");
+    console.log("正在加载 jieba-wasm...");
     jiebaModuleLoaded = (async () => {
-        const module = await import(
-            // @ts-expect-error
-            "https://cdn.jsdelivr.net/npm/jieba-wasm@2.4.0/pkg/web/jieba_rs_wasm.js"
-        );
-
-        // 2. 初始化 WASM，传入 WASM 文件的 URL
-        await module.default(WASM_URL);
-        return module;
+        await init(wasmUrl);
+        return jiebaModule as JiebaLib;
     })();
     return jiebaModuleLoaded;
 }
@@ -100,12 +94,12 @@ export async function initializeWasm() {
  * @param {number} topN - 返回前 N 个高频词。
  */
 export async function processText(text: string | string[], topN = 150) {
-    const jiebaModule = await initializeWasm();
+    const jieba = await initializeWasm();
 
     // 从已存储的模块对象中调用 cut 函数
     const words = Array.isArray(text)
-        ? text.flatMap((txt) => jiebaModule.cut(reText(txt), true))
-        : jiebaModule.cut(reText(text), true);
+        ? text.flatMap((txt) => jieba.cut(reText(txt), true))
+        : jieba.cut(reText(text), true);
 
     // ... (词频统计、过滤和排序逻辑保持不变) ...
     const freqMap = new Map<string, number>();
