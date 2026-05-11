@@ -59,7 +59,7 @@ pub enum CheckOutcome {
 }
 
 const DEFAULT_MANIFEST_URL: &str =
-    "https://github.com/glink25/cent-tauri/releases/download/web-latest/web-latest.json";
+    "https://github.com/glink25/centx/releases/download/web-latest/web-latest.json";
 
 pub fn manifest_url<R: Runtime>(app: &AppHandle<R>) -> String {
     if let Ok(v) = std::env::var("CENT_WEB_OTA_MANIFEST_URL") {
@@ -96,13 +96,15 @@ fn updater_pubkey<R: Runtime>(app: &AppHandle<R>) -> Result<PublicKey, WebOtaErr
     let decoded = STANDARD
         .decode(pubkey_b64)
         .map_err(|e| WebOtaError::Signature(e.to_string()))?;
-    let pubkey_str = std::str::from_utf8(&decoded)
-        .map_err(|e| WebOtaError::Signature(e.to_string()))?;
+    let pubkey_str =
+        std::str::from_utf8(&decoded).map_err(|e| WebOtaError::Signature(e.to_string()))?;
     PublicKey::decode(pubkey_str).map_err(|e| WebOtaError::Signature(e.to_string()))
 }
 
 fn native_version<R: Runtime>(app: &AppHandle<R>) -> Result<Version, WebOtaError> {
-    Ok(Version::parse(app.package_info().version.to_string().as_str())?)
+    Ok(Version::parse(
+        app.package_info().version.to_string().as_str(),
+    )?)
 }
 
 fn current_web_version(root: &Path) -> Option<Version> {
@@ -196,10 +198,7 @@ async fn run_check<R: Runtime>(app: AppHandle<R>) -> Result<CheckOutcome, WebOta
     let native = native_version(&app)?;
     if native < min_native {
         return Ok(CheckOutcome::Skipped {
-            reason: format!(
-                "native {} < required {}",
-                native, min_native
-            ),
+            reason: format!("native {} < required {}", native, min_native),
         });
     }
 
@@ -366,7 +365,10 @@ fn try_active(active: &Path, rel: &str) -> Option<Vec<u8>> {
     fs::read(active.join(rel)).ok()
 }
 
-fn try_embedded<R: Runtime>(app: &AppHandle<R>, rel: &str) -> Option<(Vec<u8>, String, Option<String>)> {
+fn try_embedded<R: Runtime>(
+    app: &AppHandle<R>,
+    rel: &str,
+) -> Option<(Vec<u8>, String, Option<String>)> {
     if !is_safe_rel(rel) {
         return None;
     }
@@ -433,9 +435,7 @@ pub fn handle_request<R: Runtime>(
 }
 
 #[tauri::command]
-pub async fn web_ota_check<R: Runtime>(
-    app: AppHandle<R>,
-) -> Result<CheckOutcome, WebOtaError> {
+pub async fn web_ota_check<R: Runtime>(app: AppHandle<R>) -> Result<CheckOutcome, WebOtaError> {
     run_check(app).await
 }
 
@@ -451,9 +451,7 @@ pub fn web_ota_state<R: Runtime>(
 /// Frontend signals it has rendered successfully — clear the trial counter so
 /// the active version is considered stable.
 #[tauri::command]
-pub fn web_ota_mark_healthy<R: Runtime>(
-    app: AppHandle<R>,
-) -> Result<(), WebOtaError> {
+pub fn web_ota_mark_healthy<R: Runtime>(app: AppHandle<R>) -> Result<(), WebOtaError> {
     let root = web_root(&app)?;
     let mut st = WebOtaState::load(&root);
     if st.trial_launches > 0 {
