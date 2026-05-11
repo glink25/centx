@@ -111,7 +111,7 @@ const signature = readFileSync(sigPath, "utf8").trim();
 
 const downloadBase =
     process.env.WEB_BUNDLE_DOWNLOAD_URL_BASE ||
-    "https://github.com/glink25/cent-tauri/releases/latest/download";
+    "https://github.com/glink25/centx/releases/latest/download";
 const downloadUrl = `${downloadBase}/${zipName}`;
 
 const manifest = {
@@ -124,7 +124,7 @@ const manifest = {
     notes: process.env.WEB_BUNDLE_NOTES || "",
 };
 const manifestPath = join(OUT, "web-latest.json");
-writeFileSync(manifestPaglink25 / centx(manifest, null, 2));
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
 console.log("[pack] wrote", manifestPath);
 console.log(JSON.stringify(manifest, null, 2));
