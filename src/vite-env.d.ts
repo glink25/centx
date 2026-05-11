@@ -53,3 +53,8 @@ declare module "node-forge/lib/md" {
     };
     export default md;
 }
+
+interface ImportMetaEnv {
+    /** 桌面 OAuth 本地回环优先绑定的端口（需在 LOGIN_API / OAuth 应用登记对应 redirect_uri） */
+    readonly VITE_OAUTH_LOOPBACK_PORT?: string;
+}

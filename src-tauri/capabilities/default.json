@@ -12,6 +12,8 @@
 			"identifier": "http:allow-fetch",
 			"allow": [{ "url": "https://*/*" }, { "url": "http://*/*" }]
 		},
-		"cors-fetch:default"
+		"cors-fetch:default",
+		"oauth:allow-start",
+		"oauth:allow-cancel"
 	]
 }

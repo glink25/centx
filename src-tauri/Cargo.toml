@@ -25,4 +25,5 @@ serde_json = "1"
 tauri-plugin-deep-link = "2"
 tauri-plugin-http = "2"
 tauri-plugin-cors-fetch = "5.0.0"
+tauri-plugin-oauth = "2"
 
