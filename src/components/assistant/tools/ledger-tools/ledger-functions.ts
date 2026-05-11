@@ -9,7 +9,7 @@ import type {
     ExportedJSON,
     GlobalMeta,
 } from "@/ledger/type";
-import { isBillMatched } from "@/ledger/utils";
+import { createBillMatcher } from "@/ledger/utils";
 import { filterOrderedBillListByTimeRangeAnd } from "@/utils/filter";
 
 export interface QueryBillsArgs {
@@ -69,18 +69,19 @@ export function queryBills(args: QueryBillsArgs, data: ExportedJSON) {
     }
     if (args.billType) filter.type = args.billType as BillType;
 
+    const matcher = createBillMatcher(
+        { ...filter, start: undefined, end: undefined },
+        {
+            categories: allCategories,
+            tags: allTags,
+            baseCurrency: meta.baseCurrency,
+        },
+    );
     const matchedBills = filterOrderedBillListByTimeRangeAnd(bills, {
         range: [startTime, endTime],
         interval: "[]",
         desc: true,
-        customFilter: (bill) =>
-            Boolean(
-                isBillMatched(bill, {
-                    ...filter,
-                    start: undefined,
-                    end: undefined,
-                }),
-            ),
+        customFilter: matcher,
     });
 
     const totalIncome = matchedBills

@@ -38,6 +38,131 @@ Widget 必须在文件头部的 JSDoc 注释中声明其所需访问的数据权
 
 ### 数据结构说明
 
+#### billing 账单流水
+```typescript
+context.data.billing // Bill[]
+
+type BillType = "income" | "expense";
+/** 整数金额，10000:1（即代码中的 amount 数值需除以 10000 才是实际金额） */
+type Amount = number;
+type GeoLocation = { latitude: number; longitude: number; accuracy: number };
+
+type Bill = {
+  /** 每笔账单的唯一标识 */
+  id: string;
+  /** 账单类型，代表收入或者支出 */
+  type: BillType;
+  /** 账单的类别 id（对应 BillCategory.id），可以是父类或子类 */
+  categoryId: string;
+  /** 创建者的 id */
+  creatorId: number | string;
+  /** 备注 */
+  comment?: string;
+  /** 整数金额，10000:1 */
+  amount: Amount;
+  /** 账单发生的时间（毫秒时间戳） */
+  time: number;
+  /** 账单的图片附件 */
+  images?: (File | string)[];
+  /** 账单的地址 */
+  location?: GeoLocation;
+  /** 账单的 tag id 列表 */
+  tagIds?: string[];
+  /** 多币种信息 */
+  currency?: {
+    /** 记账当时设置的本位币 */
+    base: string;
+    /** 记账当时选择的币种 */
+    target: string;
+    /** 记账当时填写的金额（非 10000:1 缩放） */
+    amount: number;
+  };
+  /** 其他额外信息 */
+  extra?: {
+    scheduledId?: string;
+  };
+};
+```
+
+#### filter 全局筛选状态
+```typescript
+context.data.filter // BillFilter（无筛选时为 {}）
+
+type BillFilter = Partial<{
+  /** 备注关键字 */
+  comment: string;
+  /** 相对时间区间（与 start/end 二选一） */
+  recent?: {
+    value: number;
+    unit: "year" | "month" | "week" | "day";
+  };
+  /** 起始时间（毫秒时间戳） */
+  start: number;
+  /** 结束时间（毫秒时间戳） */
+  end: number;
+  /** 限定收/支类型 */
+  type: BillType | undefined;
+  /** 限定创建者 id 列表 */
+  creators: (string | number)[];
+  /** 限定分类 id 列表 */
+  categories: string[];
+  /** 最小金额（实际金额，非 10000:1 缩放） */
+  minAmountNumber: number;
+  /** 最大金额（实际金额，非 10000:1 缩放） */
+  maxAmountNumber: number;
+  /** 是否仅资产相关 */
+  assets?: boolean;
+  /** 是否仅周期记账生成 */
+  scheduled?: boolean;
+  /** 必须包含的标签 id */
+  tags?: string[];
+  /** 排除的标签 id */
+  excludeTags?: string[];
+  /** 展示用的本位币 */
+  baseCurrency: string;
+  /** 限定币种列表 */
+  currencies?: string[];
+}>;
+```
+
+#### budget 预算
+```typescript
+context.data.budget // Budget[]
+
+type Budget = {
+  /** 预算唯一标识 */
+  id: string;
+  /** 预算名称 */
+  title: string;
+  /** 预算起始时间（毫秒时间戳） */
+  start: number;
+  /** 预算结束时间（毫秒时间戳，可选） */
+  end?: number;
+  /** 预算重复周期 */
+  repeat: {
+    unit: "week" | "day" | "month" | "year";
+    value: number;
+  };
+  /** 参与者（创建者 id 列表） */
+  joiners: (string | number)[];
+  /** 总预算金额（整数，10000:1） */
+  totalBudget: number;
+  /** 分类预算明细 */
+  categoriesBudget?: {
+    /** 分类 id */
+    id: string;
+    /** 该分类的预算金额（整数，10000:1） */
+    budget: number;
+  }[];
+  /** 仅统计这些标签 */
+  onlyTags?: string[];
+  /** 排除这些标签 */
+  excludeTags?: string[];
+};
+```
+
+> 注：`budget` 中仅包含预算的配置数据，**不包含已使用进度**。如需统计已用金额，需结合 `billing` 数据按 `start`/`end`/`categoriesBudget`/`onlyTags`/`excludeTags` 等字段自行计算。
+
 #### collaborators 协作者信息
 ```javascript
 context.data.collaborators // Array<{ id: string | number; name: string; avatar_url?: string; ... }>
@@ -112,7 +237,7 @@ Widget 脚本必须默认导出一个函数（支持 `async`）。该函数是 W
     * `.gap(value)`: 子元素间距（数字）。
 * **`Text(content)`**: 文本组件。
     * `.fontSize(value)`: 字号。
-    * `.color(value)`: 颜色（Hex/RGBA）。
+    * `.color(value)`: 颜色（Hex 或 rgba 字符串）。
     * `.bold(bool)`: 是否加粗。
 * **`Image(src)`**: 图片组件。
     * `.width(value)` / `.height(value)`: 尺寸。
@@ -128,24 +253,42 @@ Widget 脚本必须默认导出一个函数（支持 `async`）。该函数是 W
 /**
  * @widget-api 1.0
  * @name 预算进度条
- * @permissions budget
+ * @permissions budget, billing
  */
 
 export const config = {
-  showPercent: { type: 'Select', label: '显示百分比', options: ['是', '否'], default: '是' }
+  showPercent: { type: 'select', label: '显示百分比', options: ['是', '否'], default: '是' }
 };
 
 export default async ({ data, settings }) => {
-  const { total, used } = data.budget;
-  const isWarning = used / total > 0.9;
+  // data.budget 为 Budget[]，这里取第一个预算演示
+  const budget = (data.budget ?? [])[0];
+  if (!budget) return Text('暂无预算').color('#999');
+
+  // amount 为 10000:1 的整数金额，需统一换算为实际数值
+  const total = budget.totalBudget / 10000;
+
+  // budget 中不包含已使用进度，需从 billing 中按预算的时间范围与参与者过滤累计支出
+  const start = budget.start;
+  const end = budget.end ?? Date.now();
+  const used = (data.billing ?? [])
+    .filter(b =>
+      b.type === 'expense' &&
+      b.time >= start && b.time <= end &&
+      budget.joiners.includes(b.creatorId)
+    )
+    .reduce((sum, b) => sum + b.amount / 10000, 0);
+
+  const ratio = total > 0 ? used / total : 0;
+  const isWarning = ratio > 0.9;
 
   return Flex(
-    Text(settings.title || "预算进度").fontSize(14).color('#999'),
+    Text(budget.title || "预算进度").fontSize(14).color('#999'),
     Flex(
-      Container().bg(isWarning ? 'red' : 'green').width(`${(used/total)*100}%`).height(8),
-      Container().bg('#eee').width(`${(1 - used/total)*100}%`).height(8)
+      Container().bg(isWarning ? 'red' : 'green').width(`${Math.min(ratio, 1) * 100}%`).height(8),
+      Container().bg('#eee').width(`${Math.max(1 - ratio, 0) * 100}%`).height(8)
     ).direction('row').borderRadius(4).padding(2),
-    settings.showPercent === '是' ? Text(`${Math.round(used/total*100)}%`).bold() : null
+    settings.showPercent === '是' ? Text(`${Math.round(ratio * 100)}%`).bold() : null
   ).direction('column').gap(8);
 };
 ```

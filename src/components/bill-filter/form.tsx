@@ -576,6 +576,18 @@ export default function BillFilterForm({
                     >
                         {t("with-assets")}
                     </Tag>
+                    <a
+                        href="https://glink25.github.io/post/Cent-%E9%AB%98%E7%BA%A7%E6%90%9C%E7%B4%A2%E8%AF%AD%E6%B3%95Filter-Query/"
+                        target="_blank"
+                        className={cn(
+                            `rounded-md border py-1 px-2 flex items-center justify-center whitespace-nowrap cursor-pointer`,
+                            "text-light-900",
+                            "text-xs bg-transparent shadow-md",
+                        )}
+                        rel="noopener"
+                    >
+                        {t("advanced-search")}
+                    </a>
                 </div>
             </div>
             {/* placeholder */}

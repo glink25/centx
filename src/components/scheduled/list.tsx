@@ -39,7 +39,7 @@ export default function ScheduledListForm({
                         if (!newOne) return;
                         const needBills = [...(newOne.needBills ?? [])];
                         delete newOne.needBills;
-                        useLedgerStore.getState().addBills(needBills);
+                        useLedgerStore.getState().updateBills(needBills);
                         await add(newOne);
                     }}
                 >
@@ -103,7 +103,7 @@ export default function ScheduledListForm({
                                                         });
                                                         useLedgerStore
                                                             .getState()
-                                                            .addBills(
+                                                            .updateBills(
                                                                 needBills,
                                                             );
                                                     } catch (err) {
@@ -146,7 +146,7 @@ export default function ScheduledListForm({
                                         delete newOne.needBills;
                                         useLedgerStore
                                             .getState()
-                                            .addBills(needBills);
+                                            .updateBills(needBills);
                                         await update(id, newOne);
                                     }}
                                 >

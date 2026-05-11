@@ -72,11 +72,12 @@ export type StorageFactory<V = any> = (
     getValue: () => Promise<V | undefined>;
 };
 
-export interface StashStorage {
-    createArrayableStorage: ArrayableStorageFactory;
-    createStorage: StorageFactory;
-    clearStorages: () => Promise<void>;
-    dangerousClearAll: () => Promise<void>;
+export abstract class StashStorage {
+    abstract createArrayableStorage: ArrayableStorageFactory;
+    abstract createStorage: StorageFactory;
+    abstract clearStorages: () => Promise<void>;
+    abstract dangerousClearAll: () => Promise<void>;
+    static getArrableStorageNames: () => Promise<string[]>;
 }
 
 export class StashBucket<T extends BaseItem, Meta = any, Config = any> {

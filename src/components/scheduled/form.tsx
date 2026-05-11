@@ -39,6 +39,8 @@ import {
 import { Switch } from "../ui/switch";
 import type { Scheduled } from "./type";
 
+type NeedBill = { id: string; entry: EditBill };
+
 const createFormSchema = (t: any) =>
     z.object({
         title: z.string(),
@@ -70,7 +72,7 @@ export default function ScheduledEditForm({
     onCancel,
 }: {
     edit?: EditScheduled;
-    onConfirm?: (v?: EditScheduled & { needBills?: EditBill[] }) => void;
+    onConfirm?: (v?: EditScheduled & { needBills?: NeedBill[] }) => void;
     onCancel?: () => void;
 }) {
     const t = useIntl();
@@ -108,7 +110,7 @@ export default function ScheduledEditForm({
             end: data.end ? data.end.getTime() : undefined,
             latest: edit?.latest,
             id,
-        } as Scheduled & { needBills?: EditBill[] };
+        } as Scheduled & { needBills?: NeedBill[] };
         if (formatted.enabled) {
             const needBills = await fillScheduledBills(formatted);
             if (needBills.length > 0) {

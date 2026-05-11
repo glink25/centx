@@ -285,7 +285,7 @@ async function requestAIWithConfig(
     let fullAnswer = "";
     for await (const chunk of parser(response)) {
         if (chunk.answer?.trim() || chunk.thought?.trim()) {
-            fullAnswer += chunk.answer || "";
+            fullAnswer = chunk.answer || "";
         }
     }
     return fullAnswer;

@@ -14,7 +14,18 @@ export type PromotionItem = {
     label: string;
 };
 
+// 只有第一条会展示
 const WhatsNew: (PromotionItem & { action?: () => void })[] = [
+    {
+        id: "meet-widget-api",
+        label: "meet-widget-api",
+        action: () => {
+            window.open(
+                "https://glink25.github.io/post/%E7%BC%96%E5%86%99%E5%B1%9E%E4%BA%8E%E4%BD%A0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%B4%A6%E5%8D%95%E5%B0%8F%E7%BB%84%E4%BB%B6/",
+                "_blank",
+            );
+        },
+    },
     {
         id: "advance-billings",
         label: "advance-billings-label",

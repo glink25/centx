@@ -66,7 +66,7 @@ export function useScheduled() {
                     ...scheduled,
                     latest: Date.now() + 1,
                 });
-                useLedgerStore.getState().addBills(needBills);
+                useLedgerStore.getState().updateBills(needBills);
             }
         });
     }, [scheduleds, update]);
@@ -154,18 +154,21 @@ export async function fillScheduledBills(scheduled: Scheduled) {
         const { type, categoryId, amount, comment, currency, tagIds, extra } =
             scheduled.template;
         return {
-            type,
-            categoryId,
-            amount,
-            comment,
-            currency,
-            tagIds,
-            time,
-            extra: {
-                ...extra,
-                scheduledId: scheduled.id,
-            },
-        } as EditBill;
+            id: `${scheduled.id}-${time}`,
+            entry: {
+                type,
+                categoryId,
+                amount,
+                comment,
+                currency,
+                tagIds,
+                time,
+                extra: {
+                    ...extra,
+                    scheduledId: scheduled.id,
+                },
+            } as EditBill,
+        };
     });
 }
 

@@ -92,7 +92,7 @@
   "logout": "Logout",
   "ledger-books": "Ledger Books",
   "create-new-book": "Create new book",
-  "select-a-book": "Select a book\"",
+  "select-a-book": "Select a book",
   "loading-books": "Loading Books...",
   "no-books-go-create-one": "No books, go create one",
   "import-from-oncent-github-io": "Import from Oncent.github.io",
@@ -712,5 +712,7 @@
   "add-widget-module": "Add Widget Module",
   "thought": "Thought",
   "untitled-chat": "New Chat",
-  "no-chats": "No Chats"
+  "no-chats": "No Chats",
+  "meet-widget-api": "Customize your own widget",
+  "advanced-search": "advanced search"
 }

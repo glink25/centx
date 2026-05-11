@@ -177,4 +177,8 @@ export class BillIndexedDBStorage implements StashStorage {
             }),
         );
     };
+
+    static getArrableStorageNames() {
+        return indexedDB.databases();
+    }
 }

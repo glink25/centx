@@ -8,6 +8,14 @@ dayjs.extend(isSameOrAfter);
 
 import { DefaultCurrencyId as DefaultBaseCurrencyId } from "@/api/currency/currencies";
 import { BillCategories } from "./category";
+import {
+    type CompiledAST,
+    compileFilterQuery,
+    type FilterQueryContext,
+    isFilterQuery,
+    matchFilterQuery,
+    parseFilterQuery,
+} from "./filter-query";
 import type { Bill, BillCategory, BillFilter, BillType } from "./type";
 
 const isTypeMatched = (bill: Bill, type?: BillType) => {
@@ -73,8 +81,9 @@ const isCateMatched = (bill: Bill, cates?: string[]) => {
     return cates?.length ? cates.some((c) => bill.categoryId === c) : true;
 };
 
-const isCommentMatched = (bill: Bill, comment?: string) => {
-    return comment ? Boolean(bill.comment?.includes(comment)) : true;
+const isPlainCommentMatched = (bill: Bill, comment?: string) => {
+    if (!comment) return true;
+    return Boolean(bill.comment?.includes(comment));
 };
 
 const isAssetsMatched = (bill: Bill, assets?: boolean) => {
@@ -108,25 +117,50 @@ const isCurrenciesMatched = (
         : true;
 };
 
-export const isBillMatched = (bill: Bill, filter: BillFilter) => {
-    return (
-        isTypeMatched(bill, filter.type) &&
-        isUserMatched(bill, filter.creators) &&
-        isCateMatched(bill, filter.categories) &&
-        isMoneyMatched(bill, filter.minAmountNumber, filter.maxAmountNumber) &&
-        isTimeMatched(bill, filter.start, filter.end, filter.recent) &&
-        isAssetsMatched(bill, filter.assets) &&
-        isScheduledMatched(bill, filter.scheduled) &&
-        isCommentMatched(bill, filter.comment) &&
-        isTagsMatched(bill, filter.tags) &&
-        isCurrenciesMatched(
-            bill,
-            filter.baseCurrency ?? DefaultBaseCurrencyId,
-            filter.currencies,
-        ) &&
-        isExcludeTagsMatched(bill, filter.excludeTags)
-    );
+/**
+ * 创建一个 bill 匹配器闭包：parse + compile 在此一次性完成，
+ * 返回的函数对每个 bill 仅做求值，无重复解析开销。
+ *
+ * 设计意图：保持纯函数式管道（context 显式传入），同时让热路径
+ * （worker、analytics、UI 列表过滤）维持高性能。
+ */
+export const createBillMatcher = (
+    filter: BillFilter,
+    ctx?: FilterQueryContext,
+): ((bill: Bill) => boolean) => {
+    console.log("start filter:", filter, ctx);
+    const compiledQuery: CompiledAST | null =
+        filter.comment && isFilterQuery(filter.comment)
+            ? compileFilterQuery(parseFilterQuery(filter.comment), ctx ?? {})
+            : null;
+    const baseCurrency = filter.baseCurrency ?? DefaultBaseCurrencyId;
+    return (bill) =>
+        Boolean(
+            isTypeMatched(bill, filter.type) &&
+                isUserMatched(bill, filter.creators) &&
+                isCateMatched(bill, filter.categories) &&
+                isMoneyMatched(
+                    bill,
+                    filter.minAmountNumber,
+                    filter.maxAmountNumber,
+                ) &&
+                isTimeMatched(bill, filter.start, filter.end, filter.recent) &&
+                Boolean(isAssetsMatched(bill, filter.assets)) &&
+                Boolean(isScheduledMatched(bill, filter.scheduled)) &&
+                (compiledQuery
+                    ? matchFilterQuery(compiledQuery, bill)
+                    : isPlainCommentMatched(bill, filter.comment)) &&
+                isTagsMatched(bill, filter.tags) &&
+                isCurrenciesMatched(bill, baseCurrency, filter.currencies) &&
+                isExcludeTagsMatched(bill, filter.excludeTags),
+        );
 };
+
+export const isBillMatched = (
+    bill: Bill,
+    filter: BillFilter,
+    ctx?: FilterQueryContext,
+) => createBillMatcher(filter, ctx)(bill);
 
 export const treeCategories = (categories: BillCategory[]) => {
     // 1. 创建一个 Map 存储所有节点，并预设 children 属性

@@ -11,7 +11,7 @@ import {
 import { type Full, StashBucket } from "@/database/stash";
 import { BillIndexedDBStorage } from "@/database/storage";
 import type { Bill, BillFilter, ExportedJSON, GlobalMeta } from "@/ledger/type";
-import { isBillMatched } from "@/ledger/utils";
+import { createBillMatcher } from "@/ledger/utils";
 import { blobToBase64 } from "@/utils/file";
 import { filterOrderedBillListByTimeRangeAnd } from "@/utils/filter";
 import { type AnalysisType, analysis as analysisBills } from "./analysis";
@@ -41,17 +41,25 @@ const getDB = (storeFullName: string) => {
 
 /** 获取所有数据，再通过Array.filter过滤 */
 const filter = async (storeFullName: string, rule: BillFilter) => {
-    const items = await getDB(storeFullName).itemBucket.getItems();
-    // 提升筛选性能
+    const bucket = getDB(storeFullName).itemBucket;
+    const [items, meta] = await Promise.all([
+        bucket.getItems(),
+        bucket.getMeta(),
+    ]);
+    const globalMeta: GlobalMeta = meta ?? { tags: [] };
+    const matcher = createBillMatcher(
+        { ...rule, start: undefined, end: undefined },
+        {
+            categories: globalMeta.categories,
+            tags: globalMeta.tags,
+            baseCurrency: globalMeta.baseCurrency,
+        },
+    );
     const filtered = filterOrderedBillListByTimeRangeAnd(items, {
         range: [rule.start, rule.end],
         interval: "[]",
-        customFilter: (v) =>
-            Boolean(
-                isBillMatched(v, { ...rule, start: undefined, end: undefined }),
-            ),
+        customFilter: matcher,
     });
-    // const filtered = items.filter((v) => isBillMatched(v, rule));
     return filtered;
 };
 

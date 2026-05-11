@@ -108,6 +108,16 @@ export default function WidgetList({ onCancel }: { onCancel?: () => void }) {
                             </div>
                         </div>
                     ))}
+                    <div className="flex justify-center items-center">
+                        <a
+                            className="text-xs text-blue-500 hover:text-blue-600 underline"
+                            target="_blank"
+                            href="https://glink25.github.io/post/%E7%BC%96%E5%86%99%E5%B1%9E%E4%BA%8E%E4%BD%A0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%B4%A6%E5%8D%95%E5%B0%8F%E7%BB%84%E4%BB%B6/"
+                            rel="noopener"
+                        >
+                            {t("meet-widget-api")}
+                        </a>
+                    </div>
                 </div>
             </div>
         </PopupLayout>
