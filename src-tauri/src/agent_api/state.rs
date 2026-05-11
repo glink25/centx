@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use serde::Serialize;
 use serde_json::Value;
 use tokio::sync::oneshot;
+use tokio::task::JoinHandle;
 
 #[derive(Default)]
 pub struct AgentApiState {
@@ -16,6 +17,7 @@ pub struct AgentApiInner {
     pub port: u16,
     pub token: Option<String>,
     pub shutdown_tx: Option<oneshot::Sender<()>>,
+    pub server_task: Option<JoinHandle<()>>,
     pub pending: HashMap<String, oneshot::Sender<BridgeResponse>>,
 }
 

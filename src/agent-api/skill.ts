@@ -29,9 +29,9 @@ export type SkillContext = {
 export function buildSkillMarkdown(tools: Tool[], ctx: SkillContext): string {
     const { url, token } = ctx;
     const parts: string[] = [
-        "# Cent Ledger Agent API Skill",
+        "# Cent App Agent 操作手册 Skill",
         "",
-        "Cent (本地记账应用) 提供了一组本地 HTTP 接口，让你可以查询并分析用户的账本数据。",
+        "本手册描述了本地记账应用 Cent 对外提供的一组 HTTP 接口，外部 AI Agent 可以据此协助用户完成账本查询、分析等各类操作（后续会持续扩展更多能力）。",
         "",
         "## 连接信息",
         "",
@@ -42,6 +42,8 @@ export function buildSkillMarkdown(tools: Tool[], ctx: SkillContext): string {
         "- **鉴权方式**：所有请求需带 Header `Authorization: Bearer <Token>`",
         "",
         "Token 并非高敏感密钥，可保存在 skill 文档中以便下次会话沿用；若用户在 app 中重新生成 Token，请重新获取本 skill 更新即可。",
+        "",
+        "> ⚠️ **前置条件**：上述接口由 Cent 桌面端在本地启动，**只有当 Cent 应用处于打开（运行）状态时才可访问**。若请求超时或连接被拒绝，请提示用户先打开 Cent 并确认已在「设置 → Agent API」中启用该功能。",
         "",
         "## 调用约定",
         "",

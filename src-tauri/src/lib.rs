@@ -23,7 +23,7 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder.manage(agent_api::AgentApiState::default());
 
-    builder
+    let app = builder
         .invoke_handler(tauri::generate_handler![
             greet,
             agent_api::agent_api_supported,
@@ -32,6 +32,38 @@ pub fn run() {
             agent_api::agent_api_status,
             agent_api::agent_api_respond,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle, _event| {
+        #[cfg(desktop)]
+        if matches!(
+            _event,
+            tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
+        ) {
+            use tauri::Manager;
+            let state = _app_handle.state::<agent_api::AgentApiState>();
+            // Send shutdown synchronously; we cannot await here, but signalling
+            // graceful shutdown gives axum a chance to close the listener
+            // before the process terminates.
+            let (tx, task) = {
+                let mut inner = state.inner.lock().unwrap();
+                (inner.shutdown_tx.take(), inner.server_task.take())
+            };
+            if let Some(tx) = tx {
+                let _ = tx.send(());
+            }
+            if let Some(task) = task {
+                // Best effort: block briefly on the task so the port is freed
+                // before the process exits.
+                tauri::async_runtime::block_on(async {
+                    let _ = tokio::time::timeout(
+                        std::time::Duration::from_millis(500),
+                        task,
+                    )
+                    .await;
+                });
+            }
+        }
+    });
 }

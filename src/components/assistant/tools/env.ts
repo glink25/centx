@@ -1,9 +1,12 @@
 import dayjs from "dayjs";
+import { StorageAPI } from "@/api/storage";
 import type { ViewType } from "@/components/stat/date-slice";
 import type { FocusType } from "@/components/stat/focus-type";
 import { BillCategories } from "@/ledger/category";
 import type { BillFilterView } from "@/ledger/extra-type";
+import { useBookStore } from "@/store/book";
 import { useLedgerStore } from "@/store/ledger";
+import { useUserStore } from "@/store/user";
 
 export type EnvArg = {
     filterView?: BillFilterView;
@@ -19,13 +22,15 @@ export function setEnv(env: EnvArg) {
 }
 
 function transformEnvToPrompt(env?: EnvArg) {
-    if (!env) {
-        return "";
-    }
-
     const store = useLedgerStore.getState();
     const meta = store.infos?.meta;
     const creators = store.infos?.creators ?? [];
+
+    // 当前选中账本
+    const bookState = useBookStore.getState();
+    const currentBook = bookState.books.find(
+        (b) => b.id === bookState.currentBookId,
+    );
 
     // 获取所有分类（默认分类 + 自定义分类）
     const allCategories = [...BillCategories, ...(meta?.categories ?? [])];
@@ -35,11 +40,39 @@ function transformEnvToPrompt(env?: EnvArg) {
 
     const parts: string[] = [];
 
+    // 当前用户
+    const userState = useUserStore.getState();
+    const isUserLoggedIn =
+        userState.id !== -1 && userState.id !== 0 && Boolean(userState.id);
+
     // 基础信息
     parts.push("## 当前环境信息");
     parts.push("");
     parts.push(`**当前时间**: ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`);
+    if (isUserLoggedIn) {
+        parts.push(
+            `**当前用户**: ${userState.name || "(未命名)"} (id: ${userState.id})`,
+        );
+    } else {
+        parts.push("**当前用户**: 未登录");
+    }
+    parts.push(
+        `**登录方式**: ${StorageAPI.name}${StorageAPI.type ? ` (${StorageAPI.type})` : ""}`,
+    );
+    if (currentBook) {
+        parts.push(
+            `**当前账本**: ${currentBook.name}${currentBook.id ? ` (id: ${currentBook.id})` : ""}`,
+        );
+    } else if (bookState.currentBookId) {
+        parts.push(`**当前账本 ID**: ${bookState.currentBookId}`);
+    } else {
+        parts.push("**当前账本**: 未选中");
+    }
     parts.push("");
+
+    if (!env) {
+        return parts.join("\n");
+    }
 
     // 过滤视图信息
     if (env.filterView) {

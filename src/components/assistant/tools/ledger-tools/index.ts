@@ -4,6 +4,8 @@ import type { ExportedJSON } from "@/ledger/type";
 import { useLedgerStore } from "@/store/ledger";
 import { analyzeBills, getAccountMeta, queryBills } from "./ledger-functions";
 
+export { ImportBillsTool } from "./import-tool";
+
 const queryLikeSchema = z.object({
     startTime: z.string().optional().describe("YYYY-MM-DD"),
     endTime: z.string().optional().describe("YYYY-MM-DD"),

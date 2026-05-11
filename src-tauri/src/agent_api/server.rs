@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use axum::{
@@ -12,6 +11,7 @@ use serde_json::{json, Value};
 use subtle::ConstantTimeEq;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::oneshot;
+use tokio::task::JoinHandle;
 use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
 
@@ -193,32 +193,28 @@ pub async fn serve(
     app: AppHandle,
     requested_port: u16,
     shutdown_rx: oneshot::Receiver<()>,
-) -> Result<u16, String> {
-    let mut last_err: Option<String> = None;
-    for offset in 0..10u16 {
-        let port = requested_port.saturating_add(offset);
-        let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
-        match tokio::net::TcpListener::bind(addr).await {
-            Ok(listener) => {
-                let router = build_router(app.clone());
-                let actual_port = listener.local_addr().map(|a| a.port()).unwrap_or(port);
-                let server = axum::serve(listener, router.into_make_service())
-                    .with_graceful_shutdown(async move {
-                        let _ = shutdown_rx.await;
-                    });
-                // Spawn so we can return the port; if serve errors, log it.
-                let _ = Arc::new(()); // keep arc usage if needed later
-                tokio::spawn(async move {
-                    if let Err(e) = server.await {
-                        eprintln!("[agent-api] server error: {e}");
-                    }
-                });
-                return Ok(actual_port);
-            }
-            Err(e) => {
-                last_err = Some(format!("port {port}: {e}"));
-            }
+) -> Result<(u16, JoinHandle<()>), String> {
+    // Bind exactly the requested port; with proper graceful shutdown the port
+    // should be released between restarts so falling back is unnecessary and
+    // would surprise users (skill embeds the URL).
+    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], requested_port));
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .map_err(|e| format!("port {requested_port}: {e}"))?;
+    let actual_port = listener
+        .local_addr()
+        .map(|a| a.port())
+        .unwrap_or(requested_port);
+    let router = build_router(app.clone());
+    let server = axum::serve(listener, router.into_make_service()).with_graceful_shutdown(
+        async move {
+            let _ = shutdown_rx.await;
+        },
+    );
+    let handle = tokio::spawn(async move {
+        if let Err(e) = server.await {
+            eprintln!("[agent-api] server error: {e}");
         }
-    }
-    Err(last_err.unwrap_or_else(|| "failed to bind".into()))
+    });
+    Ok((actual_port, handle))
 }
