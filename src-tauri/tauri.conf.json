@@ -19,7 +19,7 @@
 			}
 		],
 		"security": {
-			"csp": "default-src 'self' centapp: tauri: http: https: 'unsafe-inline'; script-src 'self' centapp: 'wasm-unsafe-eval'; connect-src 'self' centapp: http: https: ipc: http://ipc.localhost;"
+			"csp": "default-src 'self' centapp: tauri: http: https: data: blob: 'unsafe-inline'; script-src 'self' centapp: 'wasm-unsafe-eval'; connect-src 'self' centapp: http: https: ipc: http://ipc.localhost; img-src 'self' centapp: http: https: data: blob:; font-src 'self' centapp: http: https: data:; style-src 'self' centapp: 'unsafe-inline';"
 		},
 		"withGlobalTauri": true
 	},

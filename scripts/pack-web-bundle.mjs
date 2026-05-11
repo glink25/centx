@@ -51,8 +51,21 @@ const sigPath = `${zipPath}.sig`;
 if (existsSync(zipPath)) rmSync(zipPath);
 if (existsSync(sigPath)) rmSync(sigPath);
 
-console.log(`[pack] zipping ${DIST} -> ${zipPath}`);
-execFileSync("zip", ["-r", "-q", zipPath, "."], { cwd: DIST, stdio: "inherit" });
+// Large rarely-changing assets are excluded; the centapp:// asset resolver
+// falls back to the embedded dist (shipped with the native installer) for
+// any path the active web bundle doesn't contain. If you bump a dependency
+// that changes one of these (e.g. jieba-wasm), publish a full `v*` release
+// so the embedded copy is refreshed.
+const EXCLUDE_GLOBS = ["*.wasm"];
+const zipArgs = [
+    "-r",
+    "-q",
+    zipPath,
+    ".",
+    ...(EXCLUDE_GLOBS.length ? ["-x", ...EXCLUDE_GLOBS] : []),
+];
+console.log(`[pack] zipping ${DIST} -> ${zipPath} (excluding: ${EXCLUDE_GLOBS.join(", ") || "none"})`);
+execFileSync("zip", zipArgs, { cwd: DIST, stdio: "inherit" });
 
 const zipBytes = readFileSync(zipPath);
 const sha256 = createHash("sha256").update(zipBytes).digest("hex");
@@ -78,6 +91,12 @@ writeFileSync(keyPath, privKeyContent);
 
 const password = process.env.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || "";
 console.log(`[pack] signing ${zipName}`);
+// The Tauri CLI signer auto-reads TAURI_SIGNING_PRIVATE_KEY from the env as
+// `--private-key`, which conflicts with `--private-key-path`. We've already
+// written the key to a file, so strip those env vars from the child process.
+const signerEnv = { ...process.env };
+delete signerEnv.TAURI_SIGNING_PRIVATE_KEY;
+delete signerEnv.TAURI_SIGNING_PRIVATE_KEY_PASSWORD;
 execFileSync(
     "npx",
     [
@@ -91,7 +110,7 @@ execFileSync(
         password,
         zipPath,
     ],
-    { stdio: "inherit" },
+    { stdio: "inherit", env: signerEnv },
 );
 rmSync(keyPath);
 rmSync(work, { recursive: true, force: true });
