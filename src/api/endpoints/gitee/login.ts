@@ -1,6 +1,5 @@
 import type { Modal } from "@/components/modal";
 import { asyncOnce } from "@/utils/async";
-import { isInApp, openOAuthLink } from "@/utils/platform";
 import { applyGiteeOAuthCallbackUrl } from "./oauth-callback-apply";
 
 // 从环境变量读取 LOGIN_API_HOST
@@ -15,15 +14,8 @@ const { promise: loginFinished, resolve: resolveLoginFinished } =
 export const createLoginAPI = () => {
     const login = (_ctx: { modal: Modal }) => {
         void (async () => {
-            const redirectUriFallback = isInApp
-                ? APP_OAUTH_CALLBACK_URL
-                : window.origin;
+            const redirectUriFallback = APP_OAUTH_CALLBACK_URL;
             const fallbackAuthorizeUrl = `${LOGIN_API_HOST}/api/gitee-oauth/authorize?redirect_uri=${encodeURIComponent(redirectUriFallback)}`;
-
-            if (!isInApp) {
-                openOAuthLink(fallbackAuthorizeUrl);
-                return;
-            }
 
             const { runTauriOAuthLoopback } = await import(
                 "@/utils/tauri-oauth-loopback"

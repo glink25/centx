@@ -1,6 +1,5 @@
 import type { Modal } from "@/components/modal";
 import { asyncOnce } from "@/utils/async";
-import { isInApp, openOAuthLink } from "@/utils/platform";
 import { applyGithubOAuthCallbackUrl } from "./oauth-callback-apply";
 
 // 从环境变量读取 LOGIN_API_HOST
@@ -10,26 +9,23 @@ const LOCAL_TOKEN_KEY = "github_user_token";
 
 const { promise: loginFinished, resolve: resolveLoginFinished } =
     Promise.withResolvers<void>();
-
+console.log("test new code ena");
 export const createLoginAPI = () => {
     const login = (_ctx: { modal: Modal }) => {
         void (async () => {
-            const redirectUriFallback = isInApp
-                ? APP_OAUTH_CALLBACK_URL
-                : window.origin;
+            const redirectUriFallback = APP_OAUTH_CALLBACK_URL;
             const fallbackAuthorizeUrl = `${LOGIN_API_HOST}/api/github-oauth/authorize?redirect_uri=${encodeURIComponent(redirectUriFallback)}`;
-
-            if (!isInApp) {
-                openOAuthLink(fallbackAuthorizeUrl);
-                return;
-            }
 
             const { runTauriOAuthLoopback } = await import(
                 "@/utils/tauri-oauth-loopback"
             );
             const result = await runTauriOAuthLoopback({
-                buildAuthorizeUrl: (loopRedirect) =>
-                    `${LOGIN_API_HOST}/api/github-oauth/authorize?redirect_uri=${encodeURIComponent(loopRedirect)}`,
+                buildAuthorizeUrl: (loopRedirect) => {
+                    console.log(
+                        `${LOGIN_API_HOST}/api/github-oauth/authorize?redirect_uri=${encodeURIComponent(loopRedirect)}`,
+                    );
+                    return `${LOGIN_API_HOST}/api/github-oauth/authorize?redirect_uri=${encodeURIComponent(loopRedirect)}`;
+                },
                 onLoopbackUrl: applyGithubOAuthCallbackUrl,
                 fallbackAuthorizeUrl,
             });
