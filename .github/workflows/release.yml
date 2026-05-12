@@ -4,6 +4,13 @@ name: Release (full)
 # generates latest.json (consumed by tauri-plugin-updater), and also
 # publishes a fresh web bundle to the rolling `web-latest` release so
 # every full release also refreshes the web OTA channel.
+#
+# Dependency graph:
+#   web-bundle  (head, cheapest, fail-fast gate)
+#       ↓
+#   prepare     (creates main draft release, exposes resolved tag)
+#       ↓  ↓
+#   desktop  android  (parallel fan-out, both upload to the draft release)
 
 on:
   push:
@@ -20,7 +27,88 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  web-bundle:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend (Tauri target, PWA disabled)
+        env:
+          TAURI_VITE: "1"
+        run: pnpm run build
+
+      - name: Pack & sign web bundle (points zip url at web-latest rolling release)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          WEB_BUNDLE_DOWNLOAD_URL_BASE: https://github.com/${{ github.repository }}/releases/download/web-latest
+        run: node scripts/pack-web-bundle.mjs
+
+      - name: Move web-latest rolling tag
+        run: |
+          git tag -f web-latest
+          git push -f origin web-latest
+
+      - name: Publish web bundle to rolling release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: web-latest
+          name: Web bundle (rolling)
+          prerelease: true
+          make_latest: "false"
+          files: |
+            release-assets/web-bundle-*.zip
+            release-assets/web-bundle-*.zip.sig
+            release-assets/web-latest.json
+
+  prepare:
+    needs: web-bundle
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create draft release (idempotent)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: cent ${{ steps.tag.outputs.tag }}
+          draft: true
+          prerelease: false
+
+  desktop:
+    needs: prepare
     permissions:
       contents: write
     strategy:
@@ -86,79 +174,99 @@ jobs:
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Resolve tag
-        id: tag
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build & release with tauri-action
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         with:
-          tagName: ${{ steps.tag.outputs.tag }}
-          releaseName: "cent ${{ steps.tag.outputs.tag }}"
+          tagName: ${{ needs.prepare.outputs.tag }}
+          releaseName: "cent ${{ needs.prepare.outputs.tag }}"
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
           updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
-  web-bundle:
-    needs: build
+  android:
+    needs: prepare
     runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-34 build-tools;34.0.0"
+
+      - name: Install NDK
+        run: |
+          sdkmanager --install "ndk;27.0.12077973"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> $GITHUB_ENV
+
+      - name: Rust stable + Android targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build frontend (Tauri target, PWA disabled)
-        env:
-          TAURI_VITE: "1"
-        run: pnpm run build
+      - name: Generate Android project (then restore tracked build.gradle.kts)
+        run: pnpm run android:regen
 
-      - name: Pack & sign web bundle (points zip url at web-latest rolling release)
+      - name: Decode keystore
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          WEB_BUNDLE_DOWNLOAD_URL_BASE: https://github.com/${{ github.repository }}/releases/download/web-latest
-        run: node scripts/pack-web-bundle.mjs
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KS" | base64 -d > "$RUNNER_TEMP/upload-keystore.jks"
 
-      - name: Move web-latest rolling tag
+      - name: Build APK + AAB
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/upload-keystore.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: pnpm exec tauri android build --apk --aab
+
+      - name: Collect artifacts
         run: |
-          git tag -f web-latest
-          git push -f origin web-latest
+          mkdir -p android-out
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk android-out/ 2>/dev/null || true
+          cp src-tauri/gen/android/app/build/outputs/bundle/universalRelease/*.aab android-out/ 2>/dev/null || true
+          find src-tauri/gen/android/app/build/outputs -name "*-release*.apk" -exec cp {} android-out/ \;
+          find src-tauri/gen/android/app/build/outputs -name "*-release*.aab" -exec cp {} android-out/ \;
+          ls -la android-out/
 
-      - name: Publish web bundle to rolling release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: web-latest
-          name: Web bundle (rolling)
-          prerelease: true
-          make_latest: "false"
-          files: |
-            release-assets/web-bundle-*.zip
-            release-assets/web-bundle-*.zip.sig
-            release-assets/web-latest.json
+      - name: Upload to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release upload "$TAG" android-out/* --clobber
