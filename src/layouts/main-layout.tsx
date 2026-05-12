@@ -9,6 +9,7 @@ import { BudgetEditProvider, BudgetProvider } from "@/components/budget";
 import { BudgetDetailProvider } from "@/components/budget/detail";
 import { CategoryListProvider } from "@/components/category";
 import { CurrencyListProvider } from "@/components/currency";
+import { ImportPreviewProvider } from "@/components/data-manager/preview-form";
 import { ModalProvider } from "@/components/modal";
 import Navigation from "@/components/navigation";
 import {
@@ -69,6 +70,7 @@ export default function MainLayout() {
                 <SortableListWithEnableProvider />
                 <SortableGroupProvider />
                 <Settings />
+                <ImportPreviewProvider />
                 <CurrencyListProvider />
                 <BookGuide />
                 <BookConfirmProvider />
