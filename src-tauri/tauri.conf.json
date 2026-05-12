@@ -17,7 +17,8 @@
 				"height": 600,
 				"url": "centapp://localhost/",
 				"titleBarStyle": "Overlay",
-				"hiddenTitle": true
+				"hiddenTitle": true,
+				"devtools": false
 			}
 		],
 		"security": {

@@ -21,6 +21,16 @@ if (isMacOSApp) {
     document.documentElement.classList.add("is-macos-app");
 }
 
+if (import.meta.env.PROD) {
+    document.addEventListener(
+        "contextmenu",
+        (e) => {
+            e.preventDefault();
+        },
+        { capture: true },
+    );
+}
+
 const lang = usePreferenceStore.getState().locale;
 initIntl(lang).then(() => {
     createRoot(document.getElementById("root")!).render(
