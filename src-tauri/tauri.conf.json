@@ -15,7 +15,9 @@
 				"title": "cent",
 				"width": 800,
 				"height": 600,
-				"url": "centapp://localhost/"
+				"url": "centapp://localhost/",
+				"titleBarStyle": "Overlay",
+				"hiddenTitle": true
 			}
 		],
 		"security": {
