@@ -183,7 +183,7 @@ const [YourFeatureProvider, showYourFeature] = createConfirmProvider(Form, {
     dialogTitle: "your-feature-title", // 国际化 key
     dialogModalClose: true, // 是否允许点击外部关闭
     contentClassName:
-        "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
+        "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]",
 });
 
 // 导出 Settings Item 组件
@@ -405,7 +405,7 @@ function YourComponent() {
 使用 Tailwind 的响应式前缀（`sm:`, `md:`, `lg:` 等）：
 
 ```typescript
-className="rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]"
+className="rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]"
 ```
 
 ---
@@ -481,7 +481,7 @@ const [PresetProvider, showPreset] = createConfirmProvider(Form, {
     dialogTitle: "preset",
     dialogModalClose: true,
     contentClassName:
-        "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
+        "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]",
 });
 
 export default function PresetSettingsItem() {
