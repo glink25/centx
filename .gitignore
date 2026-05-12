@@ -34,6 +34,11 @@ dist-ssr
 # Rust build artifacts
 src-tauri/target
 
-src-tauri/gen
+src-tauri/gen/*
+!src-tauri/gen/android
+src-tauri/gen/android/*
+!src-tauri/gen/android/app
+src-tauri/gen/android/app/*
+!src-tauri/gen/android/app/build.gradle.kts
 src-tauri/binaries
 .pnpm-store
