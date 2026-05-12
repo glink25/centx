@@ -4,6 +4,13 @@ name: Release (full)
 # generates latest.json (consumed by tauri-plugin-updater), and also
 # publishes a fresh web bundle to the rolling `web-latest` release so
 # every full release also refreshes the web OTA channel.
+#
+# Dependency graph:
+#   web-bundle  (head, cheapest, fail-fast gate)
+#       ↓
+#   prepare     (creates main draft release, exposes resolved tag)
+#       ↓  ↓
+#   desktop  android  (parallel fan-out, both upload to the draft release)
 
 on:
   push:
@@ -20,7 +27,88 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  web-bundle:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend (Tauri target, PWA disabled)
+        env:
+          TAURI_VITE: "1"
+        run: pnpm run build
+
+      - name: Pack & sign web bundle (points zip url at web-latest rolling release)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          WEB_BUNDLE_DOWNLOAD_URL_BASE: https://github.com/${{ github.repository }}/releases/download/web-latest
+        run: node scripts/pack-web-bundle.mjs
+
+      - name: Move web-latest rolling tag
+        run: |
+          git tag -f web-latest
+          git push -f origin web-latest
+
+      - name: Publish web bundle to rolling release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: web-latest
+          name: Web bundle (rolling)
+          prerelease: true
+          make_latest: "false"
+          files: |
+            release-assets/web-bundle-*.zip
+            release-assets/web-bundle-*.zip.sig
+            release-assets/web-latest.json
+
+  prepare:
+    needs: web-bundle
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create draft release (idempotent)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: cent ${{ steps.tag.outputs.tag }}
+          draft: true
+          prerelease: false
+
+  desktop:
+    needs: prepare
     permissions:
       contents: write
     strategy:
@@ -86,16 +174,6 @@ jobs:
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Resolve tag
-        id: tag
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build & release with tauri-action
         uses: tauri-apps/tauri-action@v0
         env:
@@ -110,68 +188,16 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         with:
-          tagName: ${{ steps.tag.outputs.tag }}
-          releaseName: "cent ${{ steps.tag.outputs.tag }}"
+          tagName: ${{ needs.prepare.outputs.tag }}
+          releaseName: "cent ${{ needs.prepare.outputs.tag }}"
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
           updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
-  web-bundle:
-    needs: build
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build frontend (Tauri target, PWA disabled)
-        env:
-          TAURI_VITE: "1"
-        run: pnpm run build
-
-      - name: Pack & sign web bundle (points zip url at web-latest rolling release)
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          WEB_BUNDLE_DOWNLOAD_URL_BASE: https://github.com/${{ github.repository }}/releases/download/web-latest
-        run: node scripts/pack-web-bundle.mjs
-
-      - name: Move web-latest rolling tag
-        run: |
-          git tag -f web-latest
-          git push -f origin web-latest
-
-      - name: Publish web bundle to rolling release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: web-latest
-          name: Web bundle (rolling)
-          prerelease: true
-          make_latest: "false"
-          files: |
-            release-assets/web-bundle-*.zip
-            release-assets/web-bundle-*.zip.sig
-            release-assets/web-latest.json
-
   android:
-    needs: build
+    needs: prepare
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -214,16 +240,6 @@ jobs:
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Resolve tag
-        id: tag
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Generate Android project (then restore tracked build.gradle.kts)
         run: pnpm run android:regen
 
@@ -252,4 +268,5 @@ jobs:
       - name: Upload to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ steps.tag.outputs.tag }}" android-out/* --clobber
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release upload "$TAG" android-out/* --clobber
