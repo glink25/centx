@@ -9,6 +9,15 @@
 
 @plugin "tailwindcss-animate";
 
+:root {
+	--titlebar-height: 0px;
+	--safe-area-top: calc(env(safe-area-inset-top) + var(--titlebar-height));
+}
+
+.is-macos-app {
+	--titlebar-height: 28px;
+}
+
 body {
 	width: 100vw;
 	height: 100vh;
@@ -20,7 +29,7 @@ body {
 #root {
 	width: 100%;
 	height: 100%;
-	padding: env(safe-area-inset-top) env(safe-area-inset-right)
+	padding: var(--safe-area-top) env(safe-area-inset-right)
 		env(safe-area-inset-bottom) env(safe-area-inset-left);
 	overflow: hidden;
 }

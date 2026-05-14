@@ -219,7 +219,7 @@ export default function WidgetEdit({
             settings: formSettings,
         };
 
-        if (edit) {
+        if (edit?.id) {
             await update(edit.id, widgetData);
         } else {
             await add(widgetData);
@@ -231,85 +231,88 @@ export default function WidgetEdit({
     return (
         <PopupLayout
             onBack={onCancel}
-            title={edit ? t("edit-widget") : t("add-widget")}
+            title={edit?.id ? t("edit-widget") : t("add-widget")}
             className="h-full overflow-hidden"
         >
             <div className="flex flex-col h-full overflow-hidden">
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-4 py-2 flex items-center gap-2 border-b">
-                        <div className="text-sm font-medium">
-                            {t("widget-permissions")}
-                        </div>
-                        {Object.entries(permissions).map(
-                            ([key, required]) =>
-                                required && (
-                                    <label
-                                        key={key}
-                                        className="flex items-center gap-1 text-xs"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={
-                                                allowedPermissions[
-                                                    key as keyof WidgetPermissions
-                                                ]
-                                            }
-                                            onChange={(e) =>
-                                                setAllowedPermissions(
-                                                    (prev) => ({
-                                                        ...prev,
-                                                        [key]: e.target.checked,
-                                                    }),
-                                                )
-                                            }
-                                            className="size-3"
-                                        />
-                                        {t(`permission-${key}`)}
-                                    </label>
-                                ),
-                        )}
-                    </div>
-
-                    {compiled?.config && (
-                        <ConfigForm
-                            config={compiled.config}
-                            settings={formSettings}
-                            onChange={handleFormChange}
-                        />
-                    )}
-
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                        <div className="flex flex-col overflow-hidden">
-                            <div className="px-4 py-2 text-xs font-medium border-b bg-muted/50">
-                                {t("widget-preview")}
+                <div className="flex-1 flex flex-col overflow-y-auto">
+                    <div className="flex flex-col">
+                        <div className="px-4 py-2 flex items-center gap-2 border-b">
+                            <div className="text-sm font-medium">
+                                {t("widget-permissions")}
                             </div>
-                            <div className="p-4 flex justify-center items-start">
-                                {previewLoading ? (
-                                    <div className="max-w-[320px] w-full h-[120px] bg-card rounded-lg shadow-lg">
-                                        <WidgetPreviewSkeleton />
-                                    </div>
-                                ) : previewError ? (
-                                    <div className="text-red-500 text-xs whitespace-pre-wrap select-text">
-                                        {previewError}
-                                    </div>
-                                ) : (
-                                    <div className="max-w-[320px] w-full h-[120px] bg-card rounded-lg shadow-lg p-4">
-                                        <WidgetRenderer dsl={previewDsl} />
-                                    </div>
-                                )}
-                            </div>
+                            {Object.entries(permissions).map(
+                                ([key, required]) =>
+                                    required && (
+                                        <label
+                                            key={key}
+                                            className="flex items-center gap-1 text-xs"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={
+                                                    allowedPermissions[
+                                                        key as keyof WidgetPermissions
+                                                    ]
+                                                }
+                                                onChange={(e) =>
+                                                    setAllowedPermissions(
+                                                        (prev) => ({
+                                                            ...prev,
+                                                            [key]: e.target
+                                                                .checked,
+                                                        }),
+                                                    )
+                                                }
+                                                className="size-3"
+                                            />
+                                            {t(`permission-${key}`)}
+                                        </label>
+                                    ),
+                            )}
                         </div>
 
-                        <div className="flex-1 flex flex-col overflow-hidden border-t">
-                            <div className="px-4 py-2 text-xs font-medium border-b bg-muted/50">
-                                {t("widget-code")}
-                            </div>
-                            <textarea
-                                value={code}
-                                onChange={(e) => setCode(e.target.value)}
-                                className="flex-1 w-full p-4 font-mono text-xs resize-none border-none outline-none bg-background"
-                                spellCheck={false}
+                        {compiled?.config && (
+                            <ConfigForm
+                                config={compiled.config}
+                                settings={formSettings}
+                                onChange={handleFormChange}
                             />
+                        )}
+
+                        <div className="flex-1 flex flex-col overflow-hidden flex-shrink-0">
+                            <div className="flex flex-col overflow-hidden">
+                                <div className="px-4 py-2 text-xs font-medium border-b bg-muted/50">
+                                    {t("widget-preview")}
+                                </div>
+                                <div className="p-4 flex justify-center items-start">
+                                    {previewLoading ? (
+                                        <div className="max-w-[320px] w-full h-[120px] bg-card rounded-lg shadow-lg">
+                                            <WidgetPreviewSkeleton />
+                                        </div>
+                                    ) : previewError ? (
+                                        <div className="text-red-500 text-xs whitespace-pre-wrap select-text">
+                                            {previewError}
+                                        </div>
+                                    ) : (
+                                        <div className="max-w-[320px] w-full h-[120px] bg-card rounded-lg shadow-lg">
+                                            <WidgetRenderer dsl={previewDsl} />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 flex flex-col overflow-hidden border-t min-h-[400px]">
+                                <div className="px-4 py-2 text-xs font-medium border-b bg-muted/50">
+                                    {t("widget-code")}
+                                </div>
+                                <textarea
+                                    value={code}
+                                    onChange={(e) => setCode(e.target.value)}
+                                    className="flex-1 w-full p-4 font-mono text-xs resize-none border-none outline-none bg-background"
+                                    spellCheck={false}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

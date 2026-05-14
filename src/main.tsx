@@ -11,14 +11,37 @@ import { usePreferenceStore } from "./store/preference";
 import { registerDeepLink } from "./utils/deep-link";
 import { register as registerLaunchQueue } from "./utils/launch-queue";
 import { lazyWithReload } from "./utils/lazy";
+import { isInApp } from "./utils/platform";
 
 const Rooot = lazyWithReload(() => import("./route"));
+
+const isMacOSApp =
+    isInApp && /Mac/i.test(navigator.platform || navigator.userAgent);
+if (isMacOSApp) {
+    document.documentElement.classList.add("is-macos-app");
+}
+
+if (import.meta.env.PROD) {
+    document.addEventListener(
+        "contextmenu",
+        (e) => {
+            e.preventDefault();
+        },
+        { capture: true },
+    );
+}
 
 const lang = usePreferenceStore.getState().locale;
 initIntl(lang).then(() => {
     createRoot(document.getElementById("root")!).render(
         <StrictMode>
             <LocaleProvider>
+                {isMacOSApp && (
+                    <div
+                        data-tauri-drag-region
+                        className="fixed top-0 left-0 right-0 h-[var(--titlebar-height)] z-[9999] pointer-events-auto"
+                    />
+                )}
                 <Suspense>
                     <Rooot />
                 </Suspense>

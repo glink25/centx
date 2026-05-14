@@ -22,6 +22,7 @@ import { SortableListWithEnableProvider } from "@/components/sortable/enable";
 import { SortableGroupProvider } from "@/components/sortable/group";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { WidgetEditProvider } from "@/components/widget/edit-form";
 import { useInitPreset } from "@/hooks/use-preset";
 import {
     useQuickEntryByClipboard,
@@ -71,6 +72,7 @@ export default function MainLayout() {
                 <SortableGroupProvider />
                 <Settings />
                 <ImportPreviewProvider />
+                <WidgetEditProvider />
                 <CurrencyListProvider />
                 <BookGuide />
                 <BookConfirmProvider />

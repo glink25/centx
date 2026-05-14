@@ -25,6 +25,8 @@ type State = {
     voiceByKeyboard?: boolean;
     /** native 安装包下载完后自动重启更新 */
     autoRestartOnUpdate?: boolean;
+    /** 是否关闭设置页顶部的赞助横幅 */
+    sponsorBannerClosed?: boolean;
     /** relayr中转服务配置 */
     relayr?: {
         enable?: boolean;

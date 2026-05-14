@@ -13,7 +13,21 @@ pub fn run() {
     std::panic::set_hook(Box::new(|info| {
         println!("RUST PANIC: {}", info);
     }));
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    // single-instance 必须最先注册：第二次启动（含 deep-link 触发的新实例）
+    // 会通过该回调把参数转发给已运行的实例，避免出现重复窗口。
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        use tauri::Manager;
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.unminimize();
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+    }));
+
+    let builder = builder
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_cors_fetch::init())
         .plugin(tauri_plugin_deep_link::init())

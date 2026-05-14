@@ -51,7 +51,11 @@ async function handle(req: IncomingRequest) {
     try {
         if (kind === "skill") {
             const ctx = await currentSkillContext();
-            const md = buildSkillMarkdown(CentAIConfig.tools, ctx);
+            const md = buildSkillMarkdown(
+                CentAIConfig.tools,
+                ctx,
+                CentAIConfig.skills as never,
+            );
             await respond(request_id, true, {
                 content: md,
                 content_type: "text/markdown; charset=utf-8",
@@ -59,9 +63,11 @@ async function handle(req: IncomingRequest) {
             return;
         }
         if (kind === "list") {
-            await respond(request_id, true, {
-                tools: buildToolList(CentAIConfig.tools),
-            });
+            await respond(
+                request_id,
+                true,
+                buildToolList(CentAIConfig.tools, CentAIConfig.skills as never),
+            );
             return;
         }
         if (kind === "tool") {

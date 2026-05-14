@@ -10,6 +10,7 @@ import CurrencySettingsItem from "../currency";
 import DataManagerSettingsItem from "../data-manager";
 import modal from "../modal";
 import ScheduledSettingsItems from "../scheduled/settings-item";
+import SponsorBanner, { SponsorProvider } from "../sponsor";
 import { Button } from "../ui/button";
 import WidgetSettings from "../widget";
 import AboutSettingsItem, { AdvancedGuideItem } from "./about";
@@ -110,6 +111,7 @@ export default function SettingsForm({
             <div className="divide-y divide-solid flex flex-col overflow-hidden">
                 <UserInfo />
                 <div className="flex-1 overflow-y-auto flex flex-col py-4">
+                    <SponsorBanner />
                     <div>
                         <div className="text-xs opacity-60 px-8">
                             {t("book-settings")}
@@ -160,6 +162,7 @@ export default function SettingsForm({
                     </div>
                 </div>
             </div>
+            <SponsorProvider />
         </PopupLayout>
     );
 }

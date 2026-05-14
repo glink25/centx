@@ -2,6 +2,7 @@ import PopupLayout from "@/layouts/popup-layout";
 import { useIntl } from "@/locale";
 
 import createConfirmProvider from "../confirm";
+import { SponsorAboutItem } from "../sponsor";
 import { Button } from "../ui/button";
 import Version from "./version";
 
@@ -14,7 +15,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
             onBack={onCancel}
             className="h-full overflow-hidden"
         >
-            <div className="divide-y divide-solid flex flex-col overflow-hidden py-4 gap-2">
+            <div className="divide-y divide-solid flex flex-col overflow-y-auto py-4 gap-2">
                 <div className="w-full flex flex-col justify-between items-center px-4 gap-2 pb-4">
                     <img
                         src="/icon.png"
@@ -61,6 +62,7 @@ function Form({ onCancel }: { onCancel?: () => void }) {
                     </div>
                     <i className="icon-[mdi--arrow-top-right]"></i>
                 </a>
+                <SponsorAboutItem />
                 {/* <div className="w-full min-h-10 pb-2 flex justify-between items-center px-4 opacity-60">
                     <div className="flex items-center gap-2">
                         <i className="icon-[mdi--github] size-5"></i>
@@ -77,7 +79,7 @@ const [AboutSettingsProvider, showAboutSettings] = createConfirmProvider(Form, {
     dialogTitle: "experimental-functions",
     dialogModalClose: true,
     contentClassName:
-        "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[55vh] sm:w-[90vw] sm:max-w-[500px]",
+        "h-full w-full max-h-full max-w-full rounded-none sm:rounded-md sm:max-h-[min(520px,calc(100vh-32px))] sm:w-[90vw] sm:max-w-[500px]",
 });
 
 export default function AboutSettingsItem() {

@@ -156,13 +156,21 @@ export default defineConfig(({ mode }) => {
                       port: 1420,
                       strictPort: true,
                       host: tauriDevHost || false,
+                      // 页面 origin 为 centapp://，HMR 的 WebSocket 无法走自定义 scheme，
+                      // 必须显式让 client 直连 Vite 的 ws (localhost:1420 或 devHost:1421)
                       hmr: tauriDevHost
                           ? {
                                 protocol: "ws",
                                 host: tauriDevHost,
                                 port: 1421,
+                                clientPort: 1421,
                             }
-                          : undefined,
+                          : {
+                                protocol: "ws",
+                                host: "localhost",
+                                port: 1420,
+                                clientPort: 1420,
+                            },
                       watch: {
                           ignored: ["**/src-tauri/**"],
                       },

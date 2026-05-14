@@ -377,13 +377,95 @@ fn try_embedded<R: Runtime>(
     Some((asset.bytes, asset.mime_type, asset.csp_header))
 }
 
-/// Handle a centapp:// request. Tries active version → embedded assets → SPA index.html fallback.
+/// Dev-only: proxy a centapp:// request to the Vite dev server on localhost:1420.
+/// Returns `None` if the proxy fails (e.g. dev server not running) so the caller
+/// can fall through to the normal asset resolution path.
+#[cfg(debug_assertions)]
+fn try_dev_proxy(
+    request: &tauri::http::Request<Vec<u8>>,
+) -> Option<tauri::http::Response<std::borrow::Cow<'static, [u8]>>> {
+    use std::borrow::Cow;
+    use tauri::http::Response;
+
+    let path_and_query = request
+        .uri()
+        .path_and_query()
+        .map(|p| p.as_str())
+        .unwrap_or("/");
+    let target = format!("http://localhost:1420{}", path_and_query);
+
+    let method = reqwest::Method::from_bytes(request.method().as_str().as_bytes()).ok()?;
+    let mut headers = reqwest::header::HeaderMap::new();
+    for (k, v) in request.headers().iter() {
+        let name = k.as_str().to_ascii_lowercase();
+        if matches!(
+            name.as_str(),
+            "host" | "connection" | "content-length" | "accept-encoding"
+        ) {
+            continue;
+        }
+        if let (Ok(hn), Ok(hv)) = (
+            reqwest::header::HeaderName::from_bytes(k.as_str().as_bytes()),
+            reqwest::header::HeaderValue::from_bytes(v.as_bytes()),
+        ) {
+            headers.insert(hn, hv);
+        }
+    }
+    let body = request.body().clone();
+
+    let result: Result<(u16, Vec<(String, String)>, Vec<u8>), reqwest::Error> =
+        tauri::async_runtime::block_on(async move {
+            let client = reqwest::Client::builder()
+                .no_proxy()
+                .build()?;
+            let resp = client
+                .request(method, &target)
+                .headers(headers)
+                .body(body)
+                .send()
+                .await?;
+            let status = resp.status().as_u16();
+            let hdrs: Vec<(String, String)> = resp
+                .headers()
+                .iter()
+                .filter_map(|(k, v)| {
+                    let name = k.as_str().to_ascii_lowercase();
+                    if matches!(
+                        name.as_str(),
+                        "transfer-encoding" | "connection" | "content-encoding" | "content-length"
+                    ) {
+                        return None;
+                    }
+                    Some((k.as_str().to_string(), v.to_str().ok()?.to_string()))
+                })
+                .collect();
+            let bytes = resp.bytes().await?.to_vec();
+            Ok((status, hdrs, bytes))
+        });
+
+    let (status, hdrs, bytes) = result.ok()?;
+    let mut b = Response::builder().status(status);
+    for (k, v) in hdrs {
+        b = b.header(k, v);
+    }
+    Some(b.body(Cow::Owned(bytes)).ok()?)
+}
+
+/// Handle a centapp:// request. In dev, first try proxying to Vite (HMR) so
+/// frontend changes are picked up without rebuilding the bundle. In prod (or
+/// when the dev server is unreachable), tries active OTA version → embedded
+/// assets → SPA index.html fallback.
 pub fn handle_request<R: Runtime>(
     app: &AppHandle<R>,
     request: tauri::http::Request<Vec<u8>>,
 ) -> tauri::http::Response<std::borrow::Cow<'static, [u8]>> {
     use std::borrow::Cow;
     use tauri::http::Response;
+
+    #[cfg(debug_assertions)]
+    if let Some(resp) = try_dev_proxy(&request) {
+        return resp;
+    }
 
     let raw = request.uri().path();
     let cleaned = raw.trim_start_matches('/');
