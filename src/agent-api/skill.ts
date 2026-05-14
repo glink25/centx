@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Tool } from "@/assistant";
+import type { Skill, Tool } from "@/assistant";
 
 function toJsonSchemaSafe(schema: unknown): unknown {
     try {
@@ -12,13 +12,22 @@ function toJsonSchemaSafe(schema: unknown): unknown {
     }
 }
 
-export function buildToolList(tools: Tool[]) {
-    return tools.map((t) => ({
-        name: t.name,
-        describe: t.describe,
-        argSchema: t.argSchema ? toJsonSchemaSafe(t.argSchema) : null,
-        returnSchema: t.returnSchema ? toJsonSchemaSafe(t.returnSchema) : null,
-    }));
+export function buildToolList(tools: Tool[], skills: Skill[] = []) {
+    return {
+        tools: tools.map((t) => ({
+            name: t.name,
+            describe: t.describe,
+            argSchema: t.argSchema ? toJsonSchemaSafe(t.argSchema) : null,
+            returnSchema: t.returnSchema
+                ? toJsonSchemaSafe(t.returnSchema)
+                : null,
+        })),
+        skills: skills.map((s) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+        })),
+    };
 }
 
 export type SkillContext = {
@@ -26,7 +35,11 @@ export type SkillContext = {
     token: string;
 };
 
-export function buildSkillMarkdown(tools: Tool[], ctx: SkillContext): string {
+export function buildSkillMarkdown(
+    tools: Tool[],
+    ctx: SkillContext,
+    skills: Skill[] = [],
+): string {
     const { url, token } = ctx;
     const parts: string[] = [
         "# Cent App Agent 操作手册 Skill",
@@ -88,6 +101,23 @@ export function buildSkillMarkdown(tools: Tool[], ctx: SkillContext): string {
                 "```json",
                 JSON.stringify(retJson, null, 2),
                 "```",
+                "",
+            );
+        }
+    }
+    if (skills.length) {
+        parts.push("## 可用 Skills", "");
+        parts.push(
+            "以下 skill 文档提供了某些工具的使用上下文/规范，请在调用相关工具前先阅读对应 skill：",
+            "",
+        );
+        for (const s of skills) {
+            parts.push(
+                `### ${s.name}`,
+                "",
+                s.description || "_无描述_",
+                "",
+                s.content,
                 "",
             );
         }
