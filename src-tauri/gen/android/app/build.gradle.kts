@@ -21,7 +21,7 @@ android {
         applicationId = "com.glink25.dailycent"
         minSdk = 24
         targetSdk = 36
-        versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
+        versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt() + 1000
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
     signingConfigs {
