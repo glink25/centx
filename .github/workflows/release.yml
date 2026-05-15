@@ -243,6 +243,15 @@ jobs:
       - name: Generate Android project (then restore tracked build.gradle.kts)
         run: pnpm run android:regen
 
+      - name: Sync version from tag into tauri.conf.json
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          VERSION="${TAG#v}"
+          jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json \
+            > /tmp/tauri.conf.json && mv /tmp/tauri.conf.json src-tauri/tauri.conf.json
+          echo "Set tauri version to $VERSION"
+
       - name: Decode keystore
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
